@@ -1,5 +1,6 @@
 
 const User = require("../models/User.model");
+const Record = require("../models/Record.model")
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
@@ -17,6 +18,7 @@ router.post("/signup", async (req, res) => {
   console.log("here is our new user in the DB", newUser);
   res.status(201).json(newUser);
 });
+
 
 //login route
 router.post("/login", async (req, res) => {
@@ -49,7 +51,27 @@ router.post("/login", async (req, res) => {
     console.log(err);
   }
 });
+router.post("/addRecord", async (req, res, next) => {
+  try {
+    const record = await Record.create({
+      task: req.body.task,
+      record: req.body.record,
+    });
+    
+    res.status(201).json(record);
+    console.log("Your record", record);
 
+    const foundUser = await User.findOne({ email: req.body.email });
+    if (foundUser) {
+      foundUser.record.push(record);
+      await foundUser.save();
+      console.log("User's records updated", foundUser.record);
+     
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
 //this is the verify route for protected page of your app
 router.get("/verify", enrichRequestWithUser, (req, res) => {
   console.log("here is our payload", req.payload);
@@ -64,6 +86,7 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
   try {
     const user = await User.findById(_id);
     req.privateThings = user.privateThings;
+    
     next();
   } catch (err) {
     console.log(err);
