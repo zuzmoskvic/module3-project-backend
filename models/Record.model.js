@@ -2,12 +2,12 @@ const { Schema, model } = require("mongoose");
 
 const recordSchema = new Schema(
   {
-    task: {
+    title: {
       type: String,
       required: [true, 'Task is required.'],
       lowercase: true
      },
-    record: {
+    recordPath: {
       type: String,
       required: [true, 'Record is required.']
     }
@@ -18,6 +18,8 @@ const recordSchema = new Schema(
   }
 );
 
+
 const Record = model("Record", recordSchema);
+
 
 module.exports = Record;

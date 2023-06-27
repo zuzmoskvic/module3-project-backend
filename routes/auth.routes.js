@@ -1,6 +1,7 @@
 
 const User = require("../models/User.model");
 const Record = require("../models/Record.model")
+const uploader = require('../middlewares/cloudinary.config.js');
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
@@ -51,15 +52,15 @@ router.post("/login", async (req, res) => {
     console.log(err);
   }
 });
-router.post("/addRecord", async (req, res, next) => {
+router.post("/addRecord", uploader.single("recordPath"), async (req, res, next) => {
   try {
     const record = await Record.create({
-      task: req.body.task,
-      record: req.body.record,
+      title: req.body.title,
+      recordPath: req.file.path,
     });
     
     res.status(201).json(record);
-    console.log("Your record", record);
+    console.log("Your record", req.file.path);
 
     const foundUser = await User.findOne({ email: req.body.email });
     if (foundUser) {
