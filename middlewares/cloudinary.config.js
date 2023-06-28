@@ -1,83 +1,26 @@
-// the following 3 packages are needed in order for cloudinary to run
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
-// your three cloudinary keys will be passed here from your .env file
+// Configure Cloudinary
 cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-
-const storage = multer.diskStorage({
-  cloudinary,
-  folder: 'project-module-3', 
-  allowedFormats: ['jpg', 'png'], 
-  params: { resource_type: 'raw' }, 
-  filename: function (req, res, cb) {
-    cb(null, res.originalname); 
-  }
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-module.exports = multer({ storage });
+// Define storage for uploaded files using CloudinaryStorage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'bananarama', // Specify the folder where you want to store the uploaded files in your Cloudinary account
+    allowedFormats: ['jpg', 'png'], // Specify the allowed file formats
+    resource_type: 'auto', // Automatically detect the resource type (image, video, raw)
+  },
+});
 
+// Create the multer instance with the CloudinaryStorage configuration
+const uploader = multer({ storage });
 
+module.exports = uploader;
 
-
-/*const storage = multer.diskStorage({
-    filename: (req, file, cb) => {
-      const fileExt = file.originalname.split(".").pop();
-      const filename = `${new Date().getTime()}.${fileExt}`;
-      cb(null, filename);
-    },
-  });
-
-  // Filter the file to validate if it meets the required audio extension
-  const fileFilter = (req, file, cb) => {
-    if (file.mimetype === "audio/mp3" || file.mimetype === "audio/mpeg") {
-      cb(null, true);
-    } else {
-      cb(
-        {
-          message: "Unsupported File Format",
-        },
-        false
-      );
-    }
-  };
-
-  // Set the storage, file filter and file size with multer
-  const upload = multer({
-    storage,
-    limits: {
-      fieldNameSize: 200,
-      fileSize: 5 * 1024 * 1024,
-    },
-    fileFilter,
-  }).single("audio");
-
-  // upload to cloudinary
-  
-
-    //  your three cloudinary keys will be passed here from your .env file
-    
-
-    const fName = req.file.originalname.split(".")[0];
-    cloudinary.uploader.upload(
-      path,
-      {
-        resource_type: "raw",
-        public_id: `AudioUploads/${fName}`,
-      },
-
-      // Send cloudinary response or catch error
-      (err, audio) => {
-        if (err) return res.send(err);
-
-        fs.unlinkSync(path);
-        res.send(audio);
-      }
-    );*/
-
-  module.exports = multer({ storage })

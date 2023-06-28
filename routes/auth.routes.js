@@ -1,22 +1,26 @@
 
 const User = require("../models/User.model");
 const Record = require("../models/Record.model")
-const uploader = require('../middlewares/cloudinary.config.js');
+
+
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const {
   isAuthenticated: enrichRequestWithUser,
 } = require("../middlewares/jwt.auth");
+const uploader = require('../middlewares/cloudinary.config.js');
 
-const saltRounds = 13;
+
 
 router.post("/signup", async (req, res) => {
   //   console.log("Here is the body, from signup post", req.body);
+  const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
   const newUser = await User.create({ email: req.body.email, password: hash });
   console.log("here is our new user in the DB", newUser);
+  
   res.status(201).json(newUser);
 });
 
@@ -52,27 +56,7 @@ router.post("/login", async (req, res) => {
     console.log(err);
   }
 });
-router.post("/addRecord", uploader.single("recordPath"), async (req, res, next) => {
-  try {
-    const record = await Record.create({
-      title: req.body.title,
-      recordPath: req.file.path,
-    });
-    
-    res.status(201).json(record);
-    console.log("Your record", req.file.path);
 
-    const foundUser = await User.findOne({ email: req.body.email });
-    if (foundUser) {
-      foundUser.record.push(record);
-      await foundUser.save();
-      console.log("User's records updated", foundUser.record);
-     
-    }
-  } catch (err) {
-    console.log(err);
-  }
-});
 //this is the verify route for protected page of your app
 router.get("/verify", enrichRequestWithUser, (req, res) => {
   console.log("here is our payload", req.payload);
@@ -82,6 +66,29 @@ router.get("/verify", enrichRequestWithUser, (req, res) => {
   }
 });
 
+router.post("/addRecord", uploader.single("recordPath"), async (req, res, next) => {
+  
+  try {
+   
+    const record = new Record({
+      title: req.body.title,
+      recordPath: req.file.path,
+    });
+
+    await record.save();
+    
+
+    
+    
+
+    
+
+    res.status(201).json(record);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
   try {
