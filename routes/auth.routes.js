@@ -71,16 +71,21 @@ router.get("/verify", enrichRequestWithUser, (req, res) => {
 });
 
 router.post("/addRecord", uploader.single("recordPath"), enrichRequestWithUser, async (req, res, next) => {
-  console.log("here is our payload from addRecord", req.payload);
+  console.log("here is our ID from addRecord", req.payload._id);
+
   try {
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
-    });
+     });
+     await record.save();
+     const user = await User.updateOne(
+      { _id: req.payload._id },
+      { $push: { record : record._id } }
+    );
 
 
-
-    await record.save();
+   
    
 
     res.status(201).json(record);
