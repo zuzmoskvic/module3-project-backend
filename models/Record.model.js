@@ -10,8 +10,7 @@ const recordSchema = new Schema(
     recordPath: {
       type: String,
       required: [true, 'Record is required.']
-    },
-    
+    }
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`    

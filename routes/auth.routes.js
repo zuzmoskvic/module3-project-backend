@@ -1,11 +1,8 @@
 
 const User = require("../models/User.model");
 const Record = require("../models/Record.model")
-
-
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
-
 const jwt = require("jsonwebtoken");
 const {
   isAuthenticated: enrichRequestWithUser,
@@ -66,20 +63,23 @@ router.post("/login", async (req, res) => {
 
 //this is the verify route for protected page of your app
 router.get("/verify", enrichRequestWithUser, (req, res) => {
-  console.log("here is our payload", req.payload);
+  //console.log("here is our payload", req.payload);
   const { _id } = req.payload;
   if (req.payload) {
     res.status(200).json({ user: req.payload });
   }
 });
 
-router.post("/addRecord", uploader.single("recordPath"),  async (req, res, next) => {
-
+router.post("/addRecord", uploader.single("recordPath"), enrichRequestWithUser, async (req, res, next) => {
+  console.log("here is our payload from addRecord", req.payload);
   try {
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
     });
+
+
+
     await record.save();
    
 
