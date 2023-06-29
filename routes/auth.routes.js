@@ -5,6 +5,7 @@ const Record = require("../models/Record.model")
 
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
+
 const jwt = require("jsonwebtoken");
 const {
   isAuthenticated: enrichRequestWithUser,
@@ -13,15 +14,21 @@ const uploader = require('../middlewares/cloudinary.config.js');
 
 
 
+
 router.post("/signup", async (req, res) => {
-  //   console.log("Here is the body, from signup post", req.body);
-  const saltRounds = 13;
-  const salt = bcrypt.genSaltSync(saltRounds);
-  const hash = bcrypt.hashSync(req.body.password, salt);
-  const newUser = await User.create({ email: req.body.email, password: hash });
-  console.log("here is our new user in the DB", newUser);
   
-  res.status(201).json(newUser);
+    const saltRounds = 13;
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(req.body.password, salt);
+    const newUser = await User.create({ email: req.body.email, password: hash });
+    console.log("here is our new user in the DB", newUser);
+   
+    res.status(201).json(newUser);
+
+  
+  
+  
+  
 });
 
 
@@ -66,35 +73,30 @@ router.get("/verify", enrichRequestWithUser, (req, res) => {
   }
 });
 
-router.post("/addRecord", uploader.single("recordPath"), async (req, res, next) => {
-  
+router.post("/addRecord", uploader.single("recordPath"),  async (req, res, next) => {
+
   try {
-   
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
     });
-
     await record.save();
-    
-
-    
-    
-
-    
+   
 
     res.status(201).json(record);
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: 'An error occurred' });
+    res.status(500).json({ error: 'An error occurred', details: err.message });
   }
 });
+
+
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
   try {
     const user = await User.findById(_id);
     req.privateThings = user.privateThings;
-    
+    console.log("private page", req.payload)
     next();
   } catch (err) {
     console.log(err);
