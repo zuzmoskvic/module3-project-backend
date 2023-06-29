@@ -4,11 +4,21 @@ const Record = require("../models/Record.model")
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
+const fs = require('fs');
 const {
   isAuthenticated: enrichRequestWithUser,
 } = require("../middlewares/jwt.auth");
 const uploader = require('../middlewares/cloudinary.config.js');
 
+
+//OpenIA 
+import { Configuration, OpenAIApi } from "openai";
+const configuration = new Configuration({
+    organization: "org-b4uyFKiJq6z0T7mTYu4vqZTa",
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+const response = await openai.listEngines();
 
 
 
@@ -82,6 +92,10 @@ router.post("/addRecord", uploader.single("recordPath"), enrichRequestWithUser, 
      const user = await User.updateOne(
       { _id: req.payload._id },
       { $push: { record : record._id } }
+      
+axios.
+post('https://api.openapi.com/v1/audio/transcriptions', )
+
     );
 
 
