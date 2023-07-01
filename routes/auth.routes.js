@@ -10,37 +10,7 @@ const { isAuthenticated: enrichRequestWithUser } = require('../middlewares/jwt.a
 const uploader = require('../middlewares/cloudinary.config.js');
 const { Configuration, OpenAIApi, TranscriptionsApi } = require('openai');
 const FormData = require('form-data');
-const path = require('path')
-// Create an instance of the OpenAI API
-const configuration = new Configuration({
-  organization: 'org-jbHnml0DJJI5dR3LmGdC6Tvw',
-  apiKey: process.env.OPENAI_API_KEY,
-});
-/*const openai = new OpenAIApi(configuration);
-const transcriptionApi = new TranscriptionsApi(configuration);*/
-
-// Example function to generate text using OpenAI API
-/*async function generateText(prompt) {
-  try {
-    const response = await openai.complete({
-      engine: 'davinci',
-      prompt: prompt,
-      maxTokens: 100,
-      temperature: 0.7,
-      n: 1,
-      stop: '\n',
-    });
-
-    const { choices } = response.data;
-    const generatedText = choices[0].text.trim();
-
-    return generatedText;
-  } catch (error) {
-    console.log('OpenAI API request failed:', error.message);
-    throw error;
-  }
-}*/
-
+const path = require('path');
 
 
 router.post("/signup", async (req, res) => {
@@ -103,132 +73,53 @@ router.get("/verify", enrichRequestWithUser, (req, res) => {
 
 
 
-
-
-/*router.post('/addRecord', enrichRequestWithUser, uploader.single('recordPath'), async (req, res, next) => {
-  console.log('Here is our ID from addRecord', req.payload._id);
-
+router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
   try {
+    
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
     });
-
     await record.save();
-
-    const model = 'whisper-1';
-    const formData = new FormData();
-    formData.append('model', model);
-
-    // Append the uploaded file to the FormData
-    const fileStream = req.file.path;
-    formData.append('recordPath', fs.createReadStream(fileStream));
-
-    // Make the transcription API request
-    const response = await axios.post(
-      'https://api.openai.com/v1/audio/transcriptions',
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
-
-    const { transcription } = response.data;
-
-    console.log('Transcription:', transcription);
 
     // Associate the record with the user
     const user = await User.findByIdAndUpdate(
       req.payload._id,
       { $push: { records: record._id } },
       { new: true }
-    );
+    )
 
-    res.status(201).json({ record, transcription });
-  } catch (err) {
-    console.log(err);
-    // Handle the error appropriately
-    res.status(500).json({ error: 'An error occurred' });
-  }
-});*/
-// enrichRequestWithUser ---> middleware to get the auth token
-//uploader.single("recordPath") --->  middleware to handle audio 
-
-router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
-  //console.log('Here is our ID from addRecord', req.payload._id);
-
-  try {
-    const record = new Record({
-      title: req.body.title,
-      recordPath: req.file.path,
-    });
-
-    await record.save();
-
-    const model = 'whisper-1';
+   // const filePath = path.join(__dirname, "audio.mp3");
+    const model = "whisper-1";
     const formData = new FormData();
-    formData.append('model', model);
+    formData.append("model", model);
 
-    // Function to create a Readable stream from a remote URL
+
     const createReadableStreamFromUrl = async (url) => {
       const response = await axios.get(url, { responseType: 'stream' });
       return response.data;
-    };
+    }; 
 
-    // remote URL for the audio
-    const audioUrl = req.file.path;
+    const remoteUrl = req.file.path;
+    console.log("",record);
 
-    // Create a Readable stream from the remote URL
-    const remoteAudioStream = await createReadableStreamFromUrl(audioUrl);
+    const readStream = createReadableStreamFromUrl(remoteUrl);
 
-    // Create a temporary file to store the remote audio stream
-    const tempFilePath = './temp.wav';
-    const fileStream = fs.createWriteStream(tempFilePath);
-    remoteAudioStream.pipe(fileStream);
+    formData.append("recordPath", readStream);
 
-    // Wait for the temporary file to be fully written
-    await new Promise((resolve) => {
-      fileStream.on('finish', resolve);
-    });
-
-    // Append the temporary file to the FormData
-    formData.append('recordPath', fs.createReadStream(tempFilePath));
-
-    // Make the transcription API request
-    const response = await axios.post(
-      'https://api.openai.com/v1/audio/transcriptions',
-      formData,
+    axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
       {
         headers: {
           ...formData.getHeaders(),
           'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
         },
-      }
-    );
+      })
+      .then((response)=> {
+        console.log(response.data);
+      });
 
-    // Remove the temporary file
-    fs.unlink(tempFilePath, (err) => {
-      if (err) {
-        console.error('Failed to remove temporary file:', err);
-      }
-    });
-
-    const { transcription } = response.data;
-
-    console.log('Transcription:', transcription);
-
-    // Associate the record with the user
-    const user = await User.findByIdAndUpdate(
-      req.payload._id,
-      { $push: { records: record._id } },
-      { new: true }
-    );
-
-    res.status(201).json({ record, transcription });
+   
   } catch (err) {
     console.error(err);
     // Handle the error appropriately
