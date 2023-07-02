@@ -103,26 +103,91 @@ router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) 
   })
 
 
-
+// enrichRequestWithUser
 router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
   try {
    
     // Take record from the form and upload it to mongoose 
+    /*
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
     });
     await record.save();
+    
 
     // Associate the record with the user
     const user = await User.findByIdAndUpdate(
       req.payload._id,
-      { $push: { records: record._id } },
+      { $push: { record: record._id }},
       { new: true }
-    );
+    );*/
+
+    // const loggedRecord = await Record.findById("64a14dbee716ca470634ca00");
+    // console.log("loggedRecord", loggedRecord.recordPath)
+
+    // url: "https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3",
+ 
+    async function saveAudioToLocal(url, filePath) {
+      const writer = fs.createWriteStream(filePath);
+    
+      const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream',
+      });
+    
+      response.data.pipe(writer);
+    
+      return new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+    }
+    
+    // Usage:
+    const audioUrl = 'https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3';
+    const localFilePath = './temporary.mp3';
+    
+    saveAudioToLocal(audioUrl, localFilePath)
+      .then(() => {
+        console.log('Audio file saved successfully!');
+        sendToApi();
+      })
+      .catch((error) => {
+        console.error('Error saving audio file:', error);
+        
+      });
+
+      async function sendToApi() {
+          const OPENAI_API_KEY=process.env.OPENAI_API_KEY;
+          const filePath = path.join(__dirname, "../temporary.mp3");
+          const model = "whisper-1";
+      
+          const formData = new FormData();
+          formData.append("model", model);
+          formData.append("file", fs.createReadStream(filePath));
+      
+          axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
+            {
+              headers: {
+                ...formData.getHeaders(),
+                'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
+              },
+            })
+            .then((response)=> {
+            console.log(response.data);
+              const text = response.data.text;
+              res.json({text});
+            });
+      }
+      
+
+
 
     // Method - using an audio stream 
-    
+    /*
     const audioStream = await axios.get(req.file.path, { responseType: 'stream' });
 
     const formData = new FormData();
@@ -136,7 +201,7 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
     });
 
     const transcript = response.data[0]?.text;
-    console.log('Transcript:', transcript);
+    console.log('Transcript:', transcript);*/
   } catch (err) {
     console.error(err);
     // Handle the error appropriately
@@ -188,7 +253,7 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
 
 
 // enrichRequestWithPrivateThings middleware 
-/*
+
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
   try {
@@ -199,7 +264,7 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
   } catch (err) {
     console.log(err);
   }
-};*/
+};
 
 router.get(
   "/private-page",
