@@ -68,9 +68,44 @@ const { promisify } = require('util');
 const streamifier = require('streamifier');
 const pipelineAsync = promisify(pipeline);
 
+//enrichRequestWithUser
+router.post('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
+  try {
+    // Method: using a local file 
+
+    const OPENAI_API_KEY=process.env.OPENAI_API_KEY;
+    const filePath = path.join(__dirname, "../audio.mp3");
+    const model = "whisper-1";
+
+    const formData = new FormData();
+    formData.append("model", model);
+    formData.append("file", fs.createReadStream(filePath));
+
+    axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
+      {
+        headers: {
+          ...formData.getHeaders(),
+          'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
+        },
+      })
+      .then((response)=> {
+        console.log(response.data);
+        // console.log(response);
+      });
+
+    } catch (err) {
+      console.error("error with openai axios call", err);
+      // Handle the error appropriately
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  })
+
+
 
 router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
   try {
+   
     // Take record from the form and upload it to mongoose 
     const record = new Record({
       title: req.body.title,
@@ -86,7 +121,7 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
     );
 
     // Method - using an audio stream 
-    /*
+    
     const audioStream = await axios.get(req.file.path, { responseType: 'stream' });
 
     const formData = new FormData();
@@ -101,16 +136,23 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
 
     const transcript = response.data[0]?.text;
     console.log('Transcript:', transcript);
-
+  } catch (err) {
+    console.error(err);
+    // Handle the error appropriately
+    res.status(500).json({ error: 'An error occurred' });
+  }
+})
 
     // Check if the uploaded file is being received correctly
+    /*
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
-    }
+    }*/
 
-    */
+    
     
     // Metohod - using fs to create a readable stream
+    /*
     const model = "whisper-1";
     const formData = new FormData();
     formData.append("model", model);
@@ -141,7 +183,7 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
     // Handle the error appropriately
     res.status(500).json({ error: 'An error occurred' });
   }
-})
+}) */
 
 
 // enrichRequestWithPrivateThings middleware 
@@ -161,7 +203,7 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
 router.get(
   "/private-page",
   enrichRequestWithUser,
-  //enrichRequestWithPrivateThings,
+  // enrichRequestWithPrivateThings,
   async (req, res) => {
     res.status(200).json({ privateThings: req.privateThings });
   }
