@@ -69,7 +69,7 @@ const streamifier = require('streamifier');
 const pipelineAsync = promisify(pipeline);
 
 //enrichRequestWithUser
-router.post('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
+router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
   try {
     // Method: using a local file 
 
@@ -90,9 +90,9 @@ router.post('/transcribe', uploader.single("recordPath"), async (req, res, next)
         },
       })
       .then((response)=> {
-        console.log(response.data);
-        res.status(200).json(response.data);
-        // console.log(response);
+       console.log(response.data);
+        const text = response.data.text;
+        res.json({text});
       });
 
     } catch (err) {
