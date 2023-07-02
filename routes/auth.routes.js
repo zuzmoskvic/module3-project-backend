@@ -91,6 +91,7 @@ router.post('/transcribe', uploader.single("recordPath"), async (req, res, next)
       })
       .then((response)=> {
         console.log(response.data);
+        res.status(200).json(response.data);
         // console.log(response);
       });
 
