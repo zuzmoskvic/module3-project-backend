@@ -71,9 +71,11 @@ const pipelineAsync = promisify(pipeline);
 //enrichRequestWithUser
 router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
   try {
-    // Method: using a local file 
+    // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription 
 
     const OPENAI_API_KEY=process.env.OPENAI_API_KEY;
+
+    // This is defining the path of the local file: 
     const filePath = path.join(__dirname, "../audio.mp3");
     const model = "whisper-1";
 
@@ -105,29 +107,29 @@ router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) 
 
 // enrichRequestWithUser
 router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
+
+  // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed 
+
   try {
-   
     // Take record from the form and upload it to mongoose 
-    /*
     const record = new Record({
       title: req.body.title,
       recordPath: req.file.path,
     });
     await record.save();
     
-
     // Associate the record with the user
     const user = await User.findByIdAndUpdate(
       req.payload._id,
       { $push: { record: record._id }},
       { new: true }
-    );*/
+    );
 
-    // const loggedRecord = await Record.findById("64a14dbee716ca470634ca00");
-    // console.log("loggedRecord", loggedRecord.recordPath)
+    // Search for the record URL
+    const searchedRecord = await Record.findById(record._id);
+    const audioUrl =searchedRecord.recordPath;
 
-    // url: "https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3",
- 
+    // This functions creates a stream out of a URL and saves it to a local file 
     async function saveAudioToLocal(url, filePath) {
       const writer = fs.createWriteStream(filePath);
     
@@ -145,8 +147,8 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
       });
     }
     
-    // Usage:
-    const audioUrl = 'https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3';
+    // Right now this is hard-coded, just to test the functionality of API: 
+    //const audioUrl = 'https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3';
     const localFilePath = './temporary.mp3';
     
     saveAudioToLocal(audioUrl, localFilePath)
