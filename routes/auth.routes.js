@@ -69,10 +69,7 @@ const streamifier = require("streamifier");
 const pipelineAsync = promisify(pipeline);
 
 //isAuthenticated
-router.get(
-  "/transcribe",
-  uploader.single("recordPath"),
-  async (req, res, next) => {
+router.get("/transcribe",uploader.single("recordPath"),async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
 
@@ -110,26 +107,17 @@ router.get(
 // isAuthenticated
 router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (req, res, next) => {
     // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
-
     try {
       // Take record from the form and upload it to mongoose
-      const record = new Record({
-        title: req.body.title,
-        recordPath: req.file.path,
-      });
+      const record = new Record({title: req.body.title,recordPath: req.file.path});
       await record.save();
 
+      const recordId = record._id;
       // Associate the record with the user
-      console.log(req.payload);
-      const user = await User.findByIdAndUpdate(
-        req.payload._id,
-        { $push: { record: record._id } },
-        { new: true }
-      );
+      const user = await User.findByIdAndUpdate(req.payload._id,{ $push: { record: recordId } },{ new: true });
 
       // Search for the record URL
-      const searchedRecord = await Record.findById(record._id);
-      console.log(searchedRecord);
+      const searchedRecord = await Record.findById(recordId);
       const audioUrl = searchedRecord.recordPath;
 
       // save audio to a local file
@@ -180,43 +168,36 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
             },
           })
           .then((response) => {
-            console.log(response.data.text);
             const text = response.data.text;
-            console.log(searchedRecord);
-            return Record.findByIdAndUpdate(
-              searchedRecord,
-              {  transcript: text },
-              { new: true }
-            );
+            return Record.findByIdAndUpdate(searchedRecord,{ transcript: text },{ new: true })
           });
-
       }
     } catch (err) {
       console.error(err);
-      //Handle the error appropriately
       res.status(500).json({ error: "An error occurred" });
-    }
-
-    // update the user & record with the response
-    
-    // await Record.findByIdAndUpdate(
-    //   searchedRecord,
-    //   { $push: { transcript: text }},
-    //   { new: true }
-    //   )
-    
+    }    
   }
 );
 
-// add the rest of the get route here:
-router.get(
-  "/addRecord",
-  uploader.single("recordPath"),
-  async (req, res, next) => {
-    const text = response.data.text;
-    res.json({ text });
-  }
-);
+router.get("/addRecord",async (req, res, next) => {
+  //console.log(recordId) 
+  //console.log(record._id) 
+  //console.log("here is the req.payload", req.payload) 
+});
+
+
+// router.get("/:recordId",async (req, res, next) => {
+  
+//   try {
+//     const recordId = req.params.recordId;
+//     console.log("This is the console log of record id", recordId);
+//     const newRecord = await Record.findById(recordId);
+//     const text = newRecord.transcript;
+//     res.json({recordId, text });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // Check if the uploaded file is being received correctly
 /*
