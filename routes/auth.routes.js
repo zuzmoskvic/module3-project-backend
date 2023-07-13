@@ -119,6 +119,7 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
     await record.save();
     
     // Associate the record with the user
+    console.log(req.payload);
     const user = await User.findByIdAndUpdate(
       req.payload._id,
       { $push: { record: record._id }},
@@ -150,7 +151,9 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
     // Right now this is hard-coded, just to test the functionality of API: 
     //const audioUrl = 'https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3';
     const localFilePath = './temporary.mp3';
-    
+   
+  
+
     saveAudioToLocal(audioUrl, localFilePath)
       .then(() => {
         console.log('Audio file saved successfully!');
@@ -179,37 +182,35 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
               },
             })
             .then((response)=> {
-            console.log(response.data);
+              console.log(response.data.text);
               const text = response.data.text;
-              res.json({text});
+              
+              // return User.findByIdAndUpdate(
+              //   req.payload._id,
+              //   { $push: { record: record._id }},
+              //   { new: true }
+              // ).then(user => {
+              //   // Handle the updated user object here
+              //   res.json({ text });
+              // });
+            
             });
       }
       
-
-
-
-    // Method - using an audio stream 
-    /*
-    const audioStream = await axios.get(req.file.path, { responseType: 'stream' });
-
-    const formData = new FormData();
-    formData.append('audio', audioStream.data);
-
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-      },
-    });
-
-    const transcript = response.data[0]?.text;
-    console.log('Transcript:', transcript);*/
-  } catch (err) {
-    console.error(err);
-    // Handle the error appropriately
+   } catch (err) {
+   console.error(err);
+  //Handle the error appropriately
     res.status(500).json({ error: 'An error occurred' });
-  }
+   }
 })
+
+
+// add the rest of the get route here: 
+router.get('/addRecord', uploader.single("recordPath"), async (req, res, next) => {
+    const text = response.data.text;
+    res.json({text});
+})
+
 
     // Check if the uploaded file is being received correctly
     /*
@@ -217,33 +218,8 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
       return res.status(400).json({ error: 'No file uploaded' });
     }*/
 
-    
-    
-    // Metohod - using fs to create a readable stream
-    /*
-    const model = "whisper-1";
-    const formData = new FormData();
-    formData.append("model", model);
-
-    const localFilePath = './temp.wav' // Local file path to save the downloaded file
-    const response = await axios.get(req.file.path, { responseType: 'stream' });
-    await pipelineAsync(response.data, fs.createWriteStream(localFilePath));
-    const readStream = fs.createReadStream(localFilePath);
-    formData.append("recordPath", readStream);
-
-    axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
-        },
-      })
-      .then((response) => {
-        console.log("This is the response.data", response.data)
-      });
-
     // Cleanup: Delete the temporary local file
+    /*
     fs.unlinkSync(localFilePath);
     res.status(201).json(record);
   } catch (err) {
@@ -253,8 +229,6 @@ router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), 
   }
 }) */
 
-
-// enrichRequestWithPrivateThings middleware 
 
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
