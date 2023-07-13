@@ -6,7 +6,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require("../models/User.model");
 const Record = require("../models/Record.model")
-const { isAuthenticated: enrichRequestWithUser } = require('../middlewares/jwt.auth');
+const { isAuthenticated} = require('../middlewares/jwt.auth');
+//enrichRequestWithUser
 const uploader = require('../middlewares/cloudinary.config.js');
 const { Configuration, OpenAIApi, TranscriptionsApi } = require('openai');
 const FormData = require('form-data');
@@ -54,7 +55,7 @@ router.post("/login", async (req, res) => {
 });
 
 //this is the verify route for protected page of your app
-router.get("/verify", enrichRequestWithUser, (req, res) => {
+router.get("/verify", isAuthenticated, (req, res) => {
   //console.log("here is our payload", req.payload);
   const { _id } = req.payload;
   if (req.payload) {
@@ -68,7 +69,7 @@ const { promisify } = require('util');
 const streamifier = require('streamifier');
 const pipelineAsync = promisify(pipeline);
 
-//enrichRequestWithUser
+//isAuthenticated
 router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
   try {
     // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription 
@@ -105,8 +106,8 @@ router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) 
   })
 
 
-// enrichRequestWithUser
-router.post('/addRecord', enrichRequestWithUser, uploader.single("recordPath"), async (req, res, next) => {
+// isAuthenticated
+router.post('/addRecord', isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
 
   // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed 
 
@@ -244,7 +245,7 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
 
 router.get(
   "/private-page",
-  enrichRequestWithUser,
+  isAuthenticated,
   // enrichRequestWithPrivateThings,
   async (req, res) => {
     res.status(200).json({ privateThings: req.privateThings });
@@ -253,7 +254,7 @@ router.get(
 
 router.get(
   "/private-page-2",
-  enrichRequestWithUser,
+  isAuthenticated,
   //enrichRequestWithPrivateThings,
 
   async (req, res) => {
