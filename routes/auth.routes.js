@@ -1,25 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const axios = require('axios');
-const fs = require('fs')
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const axios = require("axios");
+const fs = require("fs");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
-const Record = require("../models/Record.model")
-const { isAuthenticated} = require('../middlewares/jwt.auth');
+const Record = require("../models/Record.model");
+const { isAuthenticated } = require("../middlewares/jwt.auth");
 //enrichRequestWithUser
-const uploader = require('../middlewares/cloudinary.config.js');
-const { Configuration, OpenAIApi, TranscriptionsApi } = require('openai');
-const FormData = require('form-data');
-const path = require('path');
+const uploader = require("../middlewares/cloudinary.config.js");
+const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
+const FormData = require("form-data");
+const path = require("path");
 
 router.post("/signup", async (req, res) => {
-    const saltRounds = 13;
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const hash = bcrypt.hashSync(req.body.password, salt);
-    const newUser = await User.create({ email: req.body.email, password: hash });
-    console.log("here is our new user in the DB", newUser);
-    res.status(201).json(newUser);
+  const saltRounds = 13;
+  const salt = bcrypt.genSaltSync(saltRounds);
+  const hash = bcrypt.hashSync(req.body.password, salt);
+  const newUser = await User.create({ email: req.body.email, password: hash });
+  console.log("here is our new user in the DB", newUser);
+  res.status(201).json(newUser);
 });
 
 //login route
@@ -63,164 +63,169 @@ router.get("/verify", isAuthenticated, (req, res) => {
   }
 });
 
-
-const { pipeline } = require('stream');
-const { promisify } = require('util');
-const streamifier = require('streamifier');
+const { pipeline } = require("stream");
+const { promisify } = require("util");
+const streamifier = require("streamifier");
 const pipelineAsync = promisify(pipeline);
 
 //isAuthenticated
-router.get('/transcribe', uploader.single("recordPath"), async (req, res, next) => {
-  try {
-    // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription 
+router.get(
+  "/transcribe",
+  uploader.single("recordPath"),
+  async (req, res, next) => {
+    try {
+      // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
 
-    const OPENAI_API_KEY=process.env.OPENAI_API_KEY;
+      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-    // This is defining the path of the local file: 
-    const filePath = path.join(__dirname, "../audio.mp3");
-    const model = "whisper-1";
+      // This is defining the path of the local file:
+      const filePath = path.join(__dirname, "../audio.mp3");
+      const model = "whisper-1";
 
-    const formData = new FormData();
-    formData.append("model", model);
-    formData.append("file", fs.createReadStream(filePath));
+      const formData = new FormData();
+      formData.append("model", model);
+      formData.append("file", fs.createReadStream(filePath));
 
-    axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
-        },
-      })
-      .then((response)=> {
-       console.log(response.data);
-        const text = response.data.text;
-        res.json({text});
-      });
-
+      axios
+        .post("https://api.openai.com/v1/audio/transcriptions", formData, {
+          headers: {
+            ...formData.getHeaders(),
+            authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+          },
+        })
+        .then((response) => {
+          console.log(response.data);
+          const text = response.data.text;
+          res.json({ text });
+        });
     } catch (err) {
       console.error("error with openai axios call", err);
       // Handle the error appropriately
-      res.status(500).json({ error: 'An error occurred' });
+      res.status(500).json({ error: "An error occurred" });
     }
-  })
-
+  }
+);
 
 // isAuthenticated
-router.post('/addRecord', isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
+router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (req, res, next) => {
+    // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
 
-  // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed 
-
-  try {
-    // Take record from the form and upload it to mongoose 
-    const record = new Record({
-      title: req.body.title,
-      recordPath: req.file.path,
-    });
-    await record.save();
-    
-    // Associate the record with the user
-    console.log(req.payload);
-    const user = await User.findByIdAndUpdate(
-      req.payload._id,
-      { $push: { record: record._id }},
-      { new: true }
-    );
-
-    // Search for the record URL
-    const searchedRecord = await Record.findById(record._id);
-    const audioUrl =searchedRecord.recordPath;
-
-    // This functions creates a stream out of a URL and saves it to a local file 
-    async function saveAudioToLocal(url, filePath) {
-      const writer = fs.createWriteStream(filePath);
-    
-      const response = await axios({
-        url,
-        method: 'GET',
-        responseType: 'stream',
+    try {
+      // Take record from the form and upload it to mongoose
+      const record = new Record({
+        title: req.body.title,
+        recordPath: req.file.path,
       });
-    
-      response.data.pipe(writer);
-    
-      return new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
-    }
-    
-    // Right now this is hard-coded, just to test the functionality of API: 
-    //const audioUrl = 'https://res.cloudinary.com/dxqf5r2cu/video/upload/v1688291428/bananarama/whox60hueserufak9ql7.mp3';
-    const localFilePath = './temporary.mp3';
-   
-  
+      await record.save();
 
-    saveAudioToLocal(audioUrl, localFilePath)
-      .then(() => {
-        console.log('Audio file saved successfully!');
-        sendToApi();
-      })
-      .catch((error) => {
-        console.error('Error saving audio file:', error);
-        
-      });
+      // Associate the record with the user
+      console.log(req.payload);
+      const user = await User.findByIdAndUpdate(
+        req.payload._id,
+        { $push: { record: record._id } },
+        { new: true }
+      );
 
-      async function sendToApi() {
-          const OPENAI_API_KEY=process.env.OPENAI_API_KEY;
-          const filePath = path.join(__dirname, "../temporary.mp3");
-          const model = "whisper-1";
-      
-          const formData = new FormData();
-          formData.append("model", model);
-          formData.append("file", fs.createReadStream(filePath));
-      
-          axios.post("https://api.openai.com/v1/audio/transcriptions", formData, 
-            {
-              headers: {
-                ...formData.getHeaders(),
-                'authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                "Content-Type": `multipart/form-data; boundary=${formData._boundary}`
-              },
-            })
-            .then((response)=> {
-              console.log(response.data.text);
-              const text = response.data.text;
-              
-              // return User.findByIdAndUpdate(
-              //   req.payload._id,
-              //   { $push: { record: record._id }},
-              //   { new: true }
-              // ).then(user => {
-              //   // Handle the updated user object here
-              //   res.json({ text });
-              // });
-            
-            });
+      // Search for the record URL
+      const searchedRecord = await Record.findById(record._id);
+      console.log(searchedRecord);
+      const audioUrl = searchedRecord.recordPath;
+
+      // save audio to a local file
+      const localFilePath = "./temporary.mp3";
+      saveAudioToLocal(audioUrl, localFilePath)
+        .then(() => {
+          console.log("Audio file saved successfully!");
+          sendToApi();
+        })
+        .catch((error) => {
+          console.error("Error saving audio file:", error);
+        });
+
+      // define function saveAudioToLocal which creates a stream out of a URL and saves it to a local file
+      async function saveAudioToLocal(url, filePath) {
+        const writer = fs.createWriteStream(filePath);
+
+        const response = await axios({
+          url,
+          method: "GET",
+          responseType: "stream",
+        });
+
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+          writer.on("finish", resolve);
+          writer.on("error", reject);
+        });
       }
-      
-   } catch (err) {
-   console.error(err);
-  //Handle the error appropriately
-    res.status(500).json({ error: 'An error occurred' });
-   }
-})
 
+      // define function sendToApi which sends the file to be transcribed
+      async function sendToApi() {
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+        const filePath = path.join(__dirname, "../temporary.mp3");
+        const model = "whisper-1";
 
-// add the rest of the get route here: 
-router.get('/addRecord', uploader.single("recordPath"), async (req, res, next) => {
+        const formData = new FormData();
+        formData.append("model", model);
+        formData.append("file", fs.createReadStream(filePath));
+
+        axios
+          .post("https://api.openai.com/v1/audio/transcriptions", formData, {
+            headers: {
+              ...formData.getHeaders(),
+              authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+            },
+          })
+          .then((response) => {
+            console.log(response.data.text);
+            const text = response.data.text;
+            console.log(searchedRecord);
+            return Record.findByIdAndUpdate(
+              searchedRecord,
+              {  transcript: text },
+              { new: true }
+            );
+          });
+
+      }
+    } catch (err) {
+      console.error(err);
+      //Handle the error appropriately
+      res.status(500).json({ error: "An error occurred" });
+    }
+
+    // update the user & record with the response
+    
+    // await Record.findByIdAndUpdate(
+    //   searchedRecord,
+    //   { $push: { transcript: text }},
+    //   { new: true }
+    //   )
+    
+  }
+);
+
+// add the rest of the get route here:
+router.get(
+  "/addRecord",
+  uploader.single("recordPath"),
+  async (req, res, next) => {
     const text = response.data.text;
-    res.json({text});
-})
+    res.json({ text });
+  }
+);
 
-
-    // Check if the uploaded file is being received correctly
-    /*
+// Check if the uploaded file is being received correctly
+/*
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }*/
 
-    // Cleanup: Delete the temporary local file
-    /*
+// Cleanup: Delete the temporary local file
+/*
     fs.unlinkSync(localFilePath);
     res.status(201).json(record);
   } catch (err) {
@@ -230,13 +235,12 @@ router.get('/addRecord', uploader.single("recordPath"), async (req, res, next) =
   }
 }) */
 
-
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
   try {
     const user = await User.findById(_id);
     req.privateThings = user.privateThings;
-    console.log("private page", req.payload)
+    console.log("private page", req.payload);
     next();
   } catch (err) {
     console.log(err);
