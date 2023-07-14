@@ -92,7 +92,7 @@ router.get("/transcribe",uploader.single("recordPath"),async (req, res, next) =>
           },
         })
         .then((response) => {
-          console.log(response.data);
+          console.log(response.data.text);
           const text = response.data.text;
           res.json({ text });
         });
@@ -104,7 +104,6 @@ router.get("/transcribe",uploader.single("recordPath"),async (req, res, next) =>
   }
 );
 
-// isAuthenticated
 router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (req, res, next) => {
     // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
@@ -135,11 +134,7 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
       async function saveAudioToLocal(url, filePath) {
         const writer = fs.createWriteStream(filePath);
 
-        const response = await axios({
-          url,
-          method: "GET",
-          responseType: "stream",
-        });
+        const response = await axios({url,method: "GET",responseType: "stream"});
 
         response.data.pipe(writer);
 
@@ -169,6 +164,8 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
           })
           .then((response) => {
             const text = response.data.text;
+            console.log(text);
+            res.json({ text });
             return Record.findByIdAndUpdate(searchedRecord,{ transcript: text },{ new: true })
           });
       }
@@ -181,8 +178,8 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 
 router.get("/addRecord",async (req, res, next) => {
   //console.log(recordId) 
-  //console.log(record._id) 
-  //console.log("here is the req.payload", req.payload) 
+  // console.log(record._id) 
+  console.log("here is the req.payload", req.payload) 
 });
 
 
@@ -215,6 +212,41 @@ router.get("/addRecord",async (req, res, next) => {
     res.status(500).json({ error: 'An error occurred' });
   }
 }) */
+
+router.get("/write",async (req, res, next) => {
+
+   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  
+   const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  const openai = new OpenAIApi(configuration);
+  
+  try {
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant who can write good text based on the prompt.",
+        },
+        {
+          role: "user",
+          content: "Hi, can you please write a short feedback text about my colleague Zuzana who is working with me in my team on an Empire State Building project?",
+        },
+      ],
+    });
+  
+    const text = completion.data.choices[0].message.content;
+    console.log(text);
+    res.json( {text} );
+  } catch (err) {
+    console.error("Error with OpenAI Chat Completion", err);
+    res.status(500).json({ error: "An error occurred" });
+  }
+  
+ }
+);
 
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
