@@ -177,7 +177,7 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 
 
 
-router.get("/write",isAuthenticated, async (req, res, next) => {
+router.get("/write", isAuthenticated, async (req, res, next) => {
   // console.log(req.payload);
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
    const configuration = new Configuration({
