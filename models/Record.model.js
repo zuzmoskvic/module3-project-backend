@@ -14,9 +14,11 @@ const recordSchema = new Schema(
     transcript: {
       type: String
     },
-    writtenText: {
-      type: String
-    }
+    // text: {
+    //   type: String
+    // }
+
+    //record: [{ ref: "Record", type: Schema.Types.ObjectId }],
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`    

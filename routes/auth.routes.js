@@ -189,15 +189,13 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     const text = completion.data.choices[0].message.content;
     console.log(lastRecordId);
     console.log(text);
+    res.json( {text} );
     
 
-    // { writtenText: text }
-    // { $push: { writtenText: text } }
-
-    res.json( {text} );
-    // return Record.findByIdAndUpdate(searchedRecord, { transcript: text },{ new: true })
-
-    return Record.findByIdAndUpdate(lastRecordId, { writtenText: text }, { new: true })
+    const writtenText = new Text.create( { writtenText: text } );
+    console.log(writtenText);
+    // await writtenText.save();
+    
   } catch(err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
