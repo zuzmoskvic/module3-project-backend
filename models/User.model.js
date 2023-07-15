@@ -10,6 +10,8 @@ const userSchema = new Schema(
       trim: true
     },
     record: [{ ref: "Record", type: Schema.Types.ObjectId }],
+    writtenText : [{ ref: "Text", type: Schema.Types.ObjectId }],
+
     password: {
       type: String,
       required: [true, 'Password is required.']

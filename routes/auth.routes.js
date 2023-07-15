@@ -5,6 +5,7 @@ const fs = require("fs");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
+const Text = require("../models/Text.model");
 const Record = require("../models/Record.model");
 const { isAuthenticated } = require("../middlewares/jwt.auth");
 const uploader = require("../middlewares/cloudinary.config.js");
@@ -99,7 +100,7 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 
       const recordId = record._id;
       // Associate the record with the user
-      const user = await User.findByIdAndUpdate(req.payload._id, { $push: { record: recordId } }, { new: true });
+       await User.findByIdAndUpdate(req.payload._id, { $push: { record: recordId } }, { new: true });
 
       // Search for the record URL
       const searchedRecord = await Record.findById(recordId);
@@ -169,6 +170,7 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   // get the last record transcript 
   const user = await User.findById(req.payload._id);
   const lastRecordId = user.record[user.record.length - 1]._id;
+  console.log(lastRecordId)
   const prompt = await Record.findById(lastRecordId);
 
   try {
@@ -192,10 +194,16 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     res.json( {text} );
     
 
-    const writtenText = new Text.create( { writtenText: text } );
-    console.log(writtenText);
-    // await writtenText.save();
     
+    //start
+    const writtenText = new Text({writtenText: text});
+    await writtenText.save();
+
+    const writtenTextId = writtenText._id;
+    // Associate the record with the user
+     await User.findByIdAndUpdate(req.payload._id, { $push: { writtenText: writtenTextId } }, { new: true });
+    // await writtenText.save();
+    // end
   } catch(err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
