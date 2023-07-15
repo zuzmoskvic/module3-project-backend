@@ -176,49 +176,42 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 );
 
 
-// Check if the uploaded file is being received correctly
-/*
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }*/
 
-// Cleanup: Delete the temporary local file
-/*
-    fs.unlinkSync(localFilePath);
-    res.status(201).json(record);
-  } catch (err) {
-    console.error(err);
-    // Handle the error appropriately
-    res.status(500).json({ error: 'An error occurred' });
-  }
-}) */
-
-router.get("/write",async (req, res, next) => {
-
-   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  
+router.get("/write",isAuthenticated, async (req, res, next) => {
+  // console.log(req.payload);
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
    const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
   const openai = new OpenAIApi(configuration);
   
+  const user = await User.findById(req.payload._id);
+  const position = user.record.length - 1;
+  const lastRecordId = user.record[position]._id;
+
+  const prompt = await Record.findById(lastRecordId);
+  // const prompt = "This is my colleague Zuzana who I worked on a project together.";
+  // console.log(prompt);
+  // const lastRecord = await Record.findById(req.payload._id);
+  
+  
   try {
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant who can write good text based on the prompt.",
-        },
+        // {
+        //   role: "system",
+        //   content: "You are a helpful assistant who can write good text based on the prompt.",
+        // },
         {
           role: "user",
-          content: "Hi, can you please write a short feedback text about my colleague Zuzana who is working with me in my team on an Empire State Building project?",
+          content: `Hi, can you please write a short feedback text with this context: ${prompt}`,
         },
       ],
     });
   
     const text = completion.data.choices[0].message.content;
-    console.log(text);
+    // console.log(text);
     res.json( {text} );
   } catch (err) {
     console.error("Error with OpenAI Chat Completion", err);
@@ -260,3 +253,22 @@ router.get(
 );
 
 module.exports = router;
+
+
+
+// Check if the uploaded file is being received correctly
+/*
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }*/
+
+// Cleanup: Delete the temporary local file
+/*
+    fs.unlinkSync(localFilePath);
+    res.status(201).json(record);
+  } catch (err) {
+    console.error(err);
+    // Handle the error appropriately
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}) */
