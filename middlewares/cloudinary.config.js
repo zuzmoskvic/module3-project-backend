@@ -14,7 +14,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'bananarama', // Specify the folder where you want to store the uploaded files in your Cloudinary account
-    allowedFormats: ['mp4', 'm4a', 'mp3'], // Specify the allowed file formats
+    allowedFormats: ['mp4', 'm4a', 'mp3', 'wav', 'mpeg'], // Specify the allowed file formats
     resource_type: 'auto', // Automatically detect the resource type (image, video, raw)
   },
 });
@@ -23,4 +23,3 @@ const storage = new CloudinaryStorage({
 const uploader = multer({ storage });
 
 module.exports = uploader;
-

@@ -10,6 +10,9 @@ const recordSchema = new Schema(
     recordPath: {
       type: String,
       required: [true, 'Record is required.']
+    },
+    transcript: {
+      type: String
     }
   },
   {
@@ -18,8 +21,6 @@ const recordSchema = new Schema(
   }
 );
 
-
 const Record = model("Record", recordSchema);
-
 
 module.exports = Record;
