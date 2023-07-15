@@ -176,11 +176,6 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
   }
 );
 
-router.get("/addRecord",async (req, res, next) => {
-  //console.log(recordId) 
-  // console.log(record._id) 
-  console.log("here is the req.payload", req.payload) 
-});
 
 
 // router.get("/:recordId",async (req, res, next) => {
