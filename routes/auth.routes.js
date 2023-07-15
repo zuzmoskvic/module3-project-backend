@@ -7,7 +7,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
 const Record = require("../models/Record.model");
 const { isAuthenticated } = require("../middlewares/jwt.auth");
-//enrichRequestWithUser
 const uploader = require("../middlewares/cloudinary.config.js");
 const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
 const FormData = require("form-data");
@@ -176,20 +175,6 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
   }
 );
 
-
-
-// router.get("/:recordId",async (req, res, next) => {
-  
-//   try {
-//     const recordId = req.params.recordId;
-//     console.log("This is the console log of record id", recordId);
-//     const newRecord = await Record.findById(recordId);
-//     const text = newRecord.transcript;
-//     res.json({recordId, text });
-//   } catch (error) {
-//     next(error);
-//   }
-// });
 
 // Check if the uploaded file is being received correctly
 /*
