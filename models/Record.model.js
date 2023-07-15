@@ -21,8 +21,6 @@ const recordSchema = new Schema(
   }
 );
 
-
 const Record = model("Record", recordSchema);
-
 
 module.exports = Record;

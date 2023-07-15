@@ -25,13 +25,11 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const foundUser = await User.findOne({ email: req.body.email });
-    //   console.log("here is the found user", foundUser);
     if (foundUser) {
       const passwordMatch = bcrypt.compareSync(
         req.body.password,
         foundUser.password
       );
-      // console.log("the password match! Yay!", passwordMatch);
       if (passwordMatch) {
         //take the info you want from the user without sensetive data
         const { _id, email } = foundUser;
@@ -53,31 +51,21 @@ router.post("/login", async (req, res) => {
   }
 });
 
-//this is the verify route for protected page of your app
 router.get("/verify", isAuthenticated, (req, res) => {
-  //console.log("here is our payload", req.payload);
   const { _id } = req.payload;
   if (req.payload) {
     res.status(200).json({ user: req.payload });
   }
 });
 
-const { pipeline } = require("stream");
-const { promisify } = require("util");
-const streamifier = require("streamifier");
-const pipelineAsync = promisify(pipeline);
-
 //isAuthenticated
-router.get("/transcribe",uploader.single("recordPath"),async (req, res, next) => {
+router.get("/transcribe", uploader.single("recordPath"), async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
-
       const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
       // This is defining the path of the local file:
       const filePath = path.join(__dirname, "../audio.mp3");
       const model = "whisper-1";
-
       const formData = new FormData();
       formData.append("model", model);
       formData.append("file", fs.createReadStream(filePath));
@@ -97,7 +85,6 @@ router.get("/transcribe",uploader.single("recordPath"),async (req, res, next) =>
         });
     } catch (err) {
       console.error("error with openai axios call", err);
-      // Handle the error appropriately
       res.status(500).json({ error: "An error occurred" });
     }
   }
@@ -132,11 +119,8 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
       // define function saveAudioToLocal which creates a stream out of a URL and saves it to a local file
       async function saveAudioToLocal(url, filePath) {
         const writer = fs.createWriteStream(filePath);
-
         const response = await axios({url,method: "GET",responseType: "stream"});
-
         response.data.pipe(writer);
-
         return new Promise((resolve, reject) => {
           writer.on("finish", resolve);
           writer.on("error", reject);
@@ -165,17 +149,15 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
             const text = response.data.text;
             console.log(text);
             res.json({ text });
-            return Record.findByIdAndUpdate(searchedRecord,{ transcript: text },{ new: true })
+            return Record.findByIdAndUpdate(searchedRecord, { transcript: text },{ new: true })
           });
       }
-    } catch (err) {
+    } catch(err){
       console.error(err);
       res.status(500).json({ error: "An error occurred" });
     }    
   }
 );
-
-
 
 router.get("/write", isAuthenticated, async (req, res, next) => {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -206,7 +188,7 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   
     const text = completion.data.choices[0].message.content;
     res.json( {text} );
-  } catch (err) {
+  } catch(err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
   }
@@ -226,27 +208,17 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
   }
 };
 
-router.get(
-  "/private-page",
-  isAuthenticated,
-  async (req, res) => {
+router.get("/private-page", isAuthenticated, async (req, res) => {
     res.status(200).json({ privateThings: req.privateThings });
   }
 );
 
-router.get(
-  "/private-page-2",
-  isAuthenticated,
-  //enrichRequestWithPrivateThings,
-
-  async (req, res) => {
+router.get("/private-page-2", isAuthenticated, async (req, res) => {
     res.status(200).json({ privateThings: req.privateThings });
   }
 );
 
 module.exports = router;
-
-
 
 // Check if the uploaded file is being received correctly
 /*
