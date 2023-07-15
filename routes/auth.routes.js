@@ -178,23 +178,17 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 
 
 router.get("/write", isAuthenticated, async (req, res, next) => {
-  // console.log(req.payload);
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
    const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
   const openai = new OpenAIApi(configuration);
   
+  // get the last record transcript 
   const user = await User.findById(req.payload._id);
-  const position = user.record.length - 1;
-  const lastRecordId = user.record[position]._id;
-
+  const lastRecordId = user.record[user.record.length - 1]._id;
   const prompt = await Record.findById(lastRecordId);
-  // const prompt = "This is my colleague Zuzana who I worked on a project together.";
-  // console.log(prompt);
-  // const lastRecord = await Record.findById(req.payload._id);
-  
-  
+
   try {
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -211,7 +205,6 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     });
   
     const text = completion.data.choices[0].message.content;
-    // console.log(text);
     res.json( {text} );
   } catch (err) {
     console.error("Error with OpenAI Chat Completion", err);
@@ -236,7 +229,6 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
 router.get(
   "/private-page",
   isAuthenticated,
-  // enrichRequestWithPrivateThings,
   async (req, res) => {
     res.status(200).json({ privateThings: req.privateThings });
   }
