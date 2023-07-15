@@ -13,6 +13,9 @@ const recordSchema = new Schema(
     },
     transcript: {
       type: String
+    },
+    writtenText: {
+      type: String
     }
   },
   {

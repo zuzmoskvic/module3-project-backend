@@ -99,7 +99,7 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (re
 
       const recordId = record._id;
       // Associate the record with the user
-      const user = await User.findByIdAndUpdate(req.payload._id,{ $push: { record: recordId } },{ new: true });
+      const user = await User.findByIdAndUpdate(req.payload._id, { $push: { record: recordId } }, { new: true });
 
       // Search for the record URL
       const searchedRecord = await Record.findById(recordId);
@@ -187,7 +187,17 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     });
   
     const text = completion.data.choices[0].message.content;
+    console.log(lastRecordId);
+    console.log(text);
+    
+
+    // { writtenText: text }
+    // { $push: { writtenText: text } }
+
     res.json( {text} );
+    // return Record.findByIdAndUpdate(searchedRecord, { transcript: text },{ new: true })
+
+    return Record.findByIdAndUpdate(lastRecordId, { writtenText: text }, { new: true })
   } catch(err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
