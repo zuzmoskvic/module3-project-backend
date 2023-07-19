@@ -12,12 +12,13 @@ const uploader = require("../middlewares/cloudinary.config.js");
 const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
 const FormData = require("form-data");
 const path = require("path");
+const imageUploader = require("../middlewares/cloudinary.imageConfig.js");
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", imageUploader.single("userImage"), async (req, res) => {
   const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
-  const newUser = await User.create({ email: req.body.email, password: hash });
+  const newUser = await User.create({ email: req.body.email, userImage: req.file.path, password: hash });
   console.log("here is our new user in the DB", newUser);
   res.status(201).json(newUser);
 });
@@ -52,15 +53,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/verify", isAuthenticated, (req, res) => {
-  const { _id } = req.payload;
-  if (req.payload) {
-    res.status(200).json({ user: req.payload });
+router.get("/verify", isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.payload._id);
+    res.status(200).json({ user: user.toObject(), userImage: user.userImage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "An error occurred" });
   }
 });
 
 //isAuthenticated
-router.get("/transcribe", uploader.single("recordPath"), async (req, res, next) => {
+router.get("/transcribe", uploader.single("recordPath"),  async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
       const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -90,8 +94,21 @@ router.get("/transcribe", uploader.single("recordPath"), async (req, res, next) 
     }
   }
 );
+router.post("/profile", isAuthenticated, async (req, res, next) => {
+  try {
+   
+   const user = await User.findByIdAndDelete(req.payload._id);
+   user.delete();
+    res.status(201).json(user);
+    res.status(200).json({ message: "User account deleted successfully" });
+    console.log("hi from profile POST")
+  } catch (err) {
+    console.log("Error deleting user account", err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
 
-router.post("/addRecord",isAuthenticated,uploader.single("recordPath"),async (req, res, next) => {
+router.post("/addRecord",isAuthenticated,uploader.single("recordPath"), async (req, res, next) => {
     // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
       // Take record from the form and upload it to mongoose

@@ -9,6 +9,9 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true
     },
+    userImage: {
+      type: String,
+    },
     record: [{ ref: "Record", type: Schema.Types.ObjectId }],
     writtenText : [{ ref: "Text", type: Schema.Types.ObjectId }],
 
