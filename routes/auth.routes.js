@@ -18,7 +18,11 @@ router.post("/signup", imageUploader.single("userImage"), async (req, res) => {
   const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
-  const newUser = await User.create({ email: req.body.email, userImage: req.file.path, password: hash });
+  const newUser = await User.create({
+    email: req.body.email,
+    userImage: req.file.path,
+    password: hash,
+  });
   console.log("here is our new user in the DB", newUser);
   res.status(201).json(newUser);
 });
@@ -64,7 +68,10 @@ router.get("/verify", isAuthenticated, async (req, res) => {
 });
 
 //isAuthenticated
-router.get("/transcribe", uploader.single("recordPath"),  async (req, res, next) => {
+router.get(
+  "/transcribe",
+  uploader.single("recordPath"),
+  async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
       const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -96,28 +103,57 @@ router.get("/transcribe", uploader.single("recordPath"),  async (req, res, next)
 );
 router.post("/profile", isAuthenticated, async (req, res, next) => {
   try {
-   
-   const user = await User.findByIdAndDelete(req.payload._id);
-   user.delete();
+    const user = await User.findByIdAndDelete(req.payload._id);
+    user.delete();
     res.status(201).json(user);
     res.status(200).json({ message: "User account deleted successfully" });
-    console.log("hi from profile POST")
+    console.log("hi from profile POST");
   } catch (err) {
     console.log("Error deleting user account", err);
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+router.post("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
+  try {
+    const saltRounds = 13;
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(req.body.password, salt);
 
-router.post("/addRecord",isAuthenticated,uploader.single("recordPath"), async (req, res, next) => {
+    const userToEdit = await User.findByIdAndUpdate(
+      req.payload._id,
+      { email: req.body.email, password: hash, userImage: req.file.path },
+      { new: true }
+    );
+
+    res.status(200).json(userToEdit);
+  } catch (err) {
+    console.log("Error editing user account", err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
+router.post(
+  "/addRecord",
+  isAuthenticated,
+  uploader.single("recordPath"),
+  async (req, res, next) => {
     // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
       // Take record from the form and upload it to mongoose
-      const record = new Record({title: req.body.title,recordPath: req.file.path});
+      const record = new Record({
+        title: req.body.title,
+        recordPath: req.file.path,
+      });
       await record.save();
 
       const recordId = record._id;
       // Associate the record with the user
-       await User.findByIdAndUpdate(req.payload._id, { $push: { record: recordId } }, { new: true });
+      await User.findByIdAndUpdate(
+        req.payload._id,
+        { $push: { record: recordId } },
+        { new: true }
+      );
 
       // Search for the record URL
       const searchedRecord = await Record.findById(recordId);
@@ -137,7 +173,11 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"), async (r
       // define function saveAudioToLocal which creates a stream out of a URL and saves it to a local file
       async function saveAudioToLocal(url, filePath) {
         const writer = fs.createWriteStream(filePath);
-        const response = await axios({url,method: "GET",responseType: "stream"});
+        const response = await axios({
+          url,
+          method: "GET",
+          responseType: "stream",
+        });
         response.data.pipe(writer);
         return new Promise((resolve, reject) => {
           writer.on("finish", resolve);
@@ -167,27 +207,31 @@ router.post("/addRecord",isAuthenticated,uploader.single("recordPath"), async (r
             const text = response.data.text;
             console.log(text);
             res.json({ text });
-            return Record.findByIdAndUpdate(searchedRecord, { transcript: text },{ new: true })
+            return Record.findByIdAndUpdate(
+              searchedRecord,
+              { transcript: text },
+              { new: true }
+            );
           });
       }
-    } catch(err){
+    } catch (err) {
       console.error(err);
       res.status(500).json({ error: "An error occurred" });
-    }    
+    }
   }
 );
 
 router.get("/write", isAuthenticated, async (req, res, next) => {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-   const configuration = new Configuration({
+  const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
   const openai = new OpenAIApi(configuration);
-  
-  // get the last record transcript 
+
+  // get the last record transcript
   const user = await User.findById(req.payload._id);
   const lastRecordId = user.record[user.record.length - 1]._id;
-  console.log(lastRecordId)
+  console.log(lastRecordId);
   const prompt = await Record.findById(lastRecordId);
 
   try {
@@ -204,30 +248,30 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
         },
       ],
     });
-  
+
     const text = completion.data.choices[0].message.content;
     console.log(lastRecordId);
     console.log(text);
-    res.json( {text} );
-    
+    res.json({ text });
 
-    
     //start
-    const writtenText = new Text({writtenText: text});
+    const writtenText = new Text({ writtenText: text });
     await writtenText.save();
 
     const writtenTextId = writtenText._id;
     // Associate the record with the user
-     await User.findByIdAndUpdate(req.payload._id, { $push: { writtenText: writtenTextId } }, { new: true });
+    await User.findByIdAndUpdate(
+      req.payload._id,
+      { $push: { writtenText: writtenTextId } },
+      { new: true }
+    );
     // await writtenText.save();
     // end
-  } catch(err) {
+  } catch (err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
   }
-  
- }
-);
+});
 
 const enrichRequestWithPrivateThings = async (req, res, next) => {
   const { _id } = req.payload;
@@ -242,14 +286,12 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
 };
 
 router.get("/private-page", isAuthenticated, async (req, res) => {
-    res.status(200).json({ privateThings: req.privateThings });
-  }
-);
+  res.status(200).json({ privateThings: req.privateThings });
+});
 
 router.get("/private-page-2", isAuthenticated, async (req, res) => {
-    res.status(200).json({ privateThings: req.privateThings });
-  }
-);
+  res.status(200).json({ privateThings: req.privateThings });
+});
 
 module.exports = router;
 
