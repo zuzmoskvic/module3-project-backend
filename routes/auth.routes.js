@@ -113,6 +113,32 @@ router.post("/profile", isAuthenticated, async (req, res, next) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+router.get(
+  "/editUser/:userId",
+  isAuthenticated,
+  async (req, res, next) => {
+    try {
+      // get id from user
+     const {userId} = req.payload._id
+
+      axios
+        .get(`https://editUser/${userId}`, userId, {
+          headers: {
+            headers: { authorization: `Bearer ${gotToken}` },
+          },
+        })
+        .then((response) => {
+          console.log(response.data.text);
+          const text = response.data.text;
+          res.json({ text });
+        });
+    } catch (err) {
+      console.error("error with openai axios call", err);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  }
+);
 router.post("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
   try {
     const saltRounds = 13;
