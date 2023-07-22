@@ -128,6 +128,14 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
 
   }
 );
+router.get("/transcribe", isAuthenticated, async (req, res, next) => {
+  console.log("Hello from TRANSCRIBE");
+ 
+});
+router.get("/addRecord", isAuthenticated, async (req, res, next) => {
+  console.log("Hello from ADDRECORD");
+ 
+});
 router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
   try {
     const {userId} = req.params
