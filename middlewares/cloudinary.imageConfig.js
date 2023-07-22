@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
     params: {
       folder: 'bananarama', // Specify the folder where you want to store the uploaded files in your Cloudinary account
       allowedFormats: ['jpg', 'jpeg', 'png'], // Specify the allowed file formats
-      resource_type: 'raw', // Automatically detect the resource type (image, video, raw)
+      resource_type: 'image', // Automatically detect the resource type (image, video, raw)
     },
   });
 

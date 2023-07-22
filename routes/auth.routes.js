@@ -21,16 +21,11 @@ router.post("/signup", imageUploader.single("userImage"), async (req, res) => {
   const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
-  const newUser = await User.create({
-    email: req.body.email,
-    userImage: req.file.path,
-    password: hash,
-  });
+  const newUser = await User.create({ email: req.body.email, userImage: req.file.path, password: hash });
   console.log("here is our new user in the DB", newUser);
   res.status(201).json(newUser);
 });
 
-//login route
 router.post("/login", async (req, res) => {
   try {
     const foundUser = await User.findOne({ email: req.body.email });
@@ -70,7 +65,6 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-//isAuthenticated
 router.get("/transcribe", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
@@ -125,17 +119,17 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
       
       console.log( user );
       res.status(200).json(  user  );
-
   }
 );
+
 router.get("/transcribe", isAuthenticated, async (req, res, next) => {
-  console.log("Hello from TRANSCRIBE");
- 
+  console.log("Hello from TRANSCRIBE"); 
 });
+
 router.get("/addRecord", isAuthenticated, async (req, res, next) => {
   console.log("Hello from ADDRECORD");
- 
 });
+
 router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
   try {
     const {userId} = req.params
@@ -152,7 +146,6 @@ router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage
     res.status(500).json({ error: "Something went wrong" });
   }
 });
-
 
 router.post("/addRecord", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
     // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
@@ -296,15 +289,25 @@ router.get("/display", isAuthenticated, async (req, res, next) => {
     const lastRecordId = user.record[user.record.length - 1]._id;
     const foundRecord = await Record.findById(lastRecordId);
     const transcript = foundRecord.transcript;
-    //console.log(transcript);
-
     res.json(transcript);
   } catch (err) {
     next(err);
-}
-}
+}}
 );
 
+// This route displays all recordings of a user
+router.get("/profile", isAuthenticated, async (req, res, next) => {
+  try {
+    // Get the last record transcript 
+    const user = await User.findById(req.payload._id);
+    // const lastRecordId = user.record[user.record.length - 1]._id;
+    // const foundRecord = await Record.findById(lastRecordId);
+    // const transcript = foundRecord.transcript;
+    res.json(user);
+  } catch (err) {
+    next(err);
+}}
+);
 
 router.get("/private-page", isAuthenticated, async (req, res) => {
   res.status(200).json({ privateThings: req.privateThings });
