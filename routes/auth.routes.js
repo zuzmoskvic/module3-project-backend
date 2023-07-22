@@ -129,6 +129,7 @@ router.get(
          headers: { authorization: `Bearer ${gotToken}` },
        },
      })
+     
         .then((response) => {
           console.log(response.data.text);
           const text = response.data.text;
