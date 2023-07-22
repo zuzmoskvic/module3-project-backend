@@ -123,10 +123,10 @@ router.get(
      const {userId} = req.payload._id
 
       axios
-        .get(`https://editUser/${userId}`, userId, {
-          headers: {
+        .get(`editUser/${userId}`, userId, {
+          //headers: {
             headers: { authorization: `Bearer ${gotToken}` },
-          },
+         // },
         })
         .then((response) => {
           console.log(response.data.text);
@@ -141,13 +141,11 @@ router.get(
 );
 router.post("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
   try {
-    const saltRounds = 13;
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const hash = bcrypt.hashSync(req.body.password, salt);
-
+    const {userId} = req.params
+    console.log(userId, "id from editUser POST ")
     const userToEdit = await User.findByIdAndUpdate(
-      req.payload._id,
-      { email: req.body.email, password: hash, userImage: req.file.path },
+      userId,
+      { email: req.body.email },
       { new: true }
     );
 
