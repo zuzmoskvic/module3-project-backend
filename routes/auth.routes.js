@@ -68,13 +68,10 @@ router.get("/verify", isAuthenticated, async (req, res) => {
 });
 
 //isAuthenticated
-router.get(
-  "/transcribe",
-  uploader.single("recordPath"),
-  async (req, res, next) => {
+router.get("/transcribe", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
     try {
       // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
-      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
       // This is defining the path of the local file:
       const filePath = path.join(__dirname, "../audio.mp3");
       const model = "whisper-1";
@@ -82,8 +79,7 @@ router.get(
       formData.append("model", model);
       formData.append("file", fs.createReadStream(filePath));
 
-      axios
-        .post("https://api.openai.com/v1/audio/transcriptions", formData, {
+      const response = axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
           headers: {
             ...formData.getHeaders(),
             authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
