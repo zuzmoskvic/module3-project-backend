@@ -120,14 +120,15 @@ router.get(
   async (req, res, next) => {
     try {
       // get id from user
-     const {userId} = req.payload._id
+     const {userId} = req.params.userId
+     console.log(userId)
 
-      axios
-        .get(`editUser/${userId}`, userId, {
-          //headers: {
-            headers: { authorization: `Bearer ${gotToken}` },
-         // },
-        })
+     axios
+     .get(`https://editUser/${userId}`, userId, {
+       headers: {
+         headers: { authorization: `Bearer ${gotToken}` },
+       },
+     })
         .then((response) => {
           console.log(response.data.text);
           const text = response.data.text;
@@ -139,7 +140,7 @@ router.get(
     }
   }
 );
-router.post("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
+router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
   try {
     const {userId} = req.params
     console.log(userId, "id from editUser POST ")
