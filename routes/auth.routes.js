@@ -22,8 +22,12 @@ router.post("/signup", cloudinaryImageUploader.single("userImage"), async (req, 
   const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
-  const newUser = await User.create({ email: req.body.email, userImage: req.file.path, password: hash });
-  console.log("here is our new user in the DB", newUser);
+  const newUser = await User.create({
+    email: req.body.email,
+    ...(req.file ? { userImage: req.file.path } : {}),
+    password: hash
+  });
+  // console.log("here is our new user in the DB", newUser);
   res.status(201).json(newUser);
 });
 
