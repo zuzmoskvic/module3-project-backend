@@ -13,7 +13,8 @@ const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
 const FormData = require("form-data");
 const path = require("path");
 const imageUploader = require("../middlewares/cloudinary.imageConfig.js");
-const multer = require("multer");
+const upload = require("../middlewares/multer.config");
+// const multer = require("multer");
 
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
@@ -261,17 +262,6 @@ const enrichRequestWithPrivateThings = async (req, res, next) => {
     console.log(err);
   }
 };
-
-// Multer configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './'); // Specify the directory where you want to save the files
-  },
-  filename: function (req, file, cb) {
-    cb(null, 'recorded.wav'); // Use the original filename for saving the file
-  },
-});
-const upload = multer({ storage: storage });
 
 // Record route: this route saves a file recorded by user to the project repo
 router.post("/record", isAuthenticated, upload.single('audio'), async (req, res, next) => {
