@@ -8,17 +8,16 @@ const User = require("../models/User.model");
 const Text = require("../models/Text.model");
 const Record = require("../models/Record.model");
 const { isAuthenticated } = require("../middlewares/jwt.auth");
-const uploader = require("../middlewares/cloudinary.config.js");
+const cloudinaryAudioUploader = require("../middlewares/cloudinary.config.js");
 const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
 const FormData = require("form-data");
 const path = require("path");
-const imageUploader = require("../middlewares/cloudinary.imageConfig.js");
-const upload = require("../middlewares/multer.config");
-// const multer = require("multer");
+const cloudinaryImageUploader = require("../middlewares/cloudinary.imageConfig.js");
+const multerAudioUploader = require("../middlewares/multer.config");
 
 const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
-router.post("/signup", imageUploader.single("userImage"), async (req, res) => {
+router.post("/signup", cloudinaryImageUploader.single("userImage"), async (req, res) => {
   const saltRounds = 13;
   const salt = bcrypt.genSaltSync(saltRounds);
   const hash = bcrypt.hashSync(req.body.password, salt);
@@ -47,9 +46,7 @@ router.post("/login", async (req, res) => {
         console.log("here is my new token", authToken);
         res.status(200).json({ authToken });
       }
-    } else {
-      //if there is no email in the DB matching
-      res.status(400).json({ message: "email or password do not match" });
+    } else { res.status(400).json({ message: "email or password do not match" });
     }
   } catch (err) {
     console.log(err);
@@ -66,9 +63,9 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/transcribe", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
+router.get("/transcribe", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
     try {
-      // TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
+      // TO TO / TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
 
       // This is defining the path of the local file:
       const filePath = path.join(__dirname, "../audio copy.mp3");
@@ -122,17 +119,17 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   }
 );
 
-// TO DELETE
+// TO DO / TO DELETE
 router.get("/transcribe", isAuthenticated, async (req, res, next) => {
   console.log("Hello from TRANSCRIBE"); 
 });
 
-// TO DELETE
+// TO DO / TO DELETE
 router.get("/addRecord", isAuthenticated, async (req, res, next) => {
   console.log("Hello from ADDRECORD");
 });
 
-router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage"),  async (req, res, next) => {
+router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"),  async (req, res, next) => {
   try {
     const {userId} = req.params
     console.log(userId, "id from editUser POST ")
@@ -149,7 +146,7 @@ router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage
   }
 });
 
-router.post("/addRecord", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
+router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
     // Upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
       // Take record from the form and upload it to mongoose
@@ -251,20 +248,8 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   }
 });
 
-const enrichRequestWithPrivateThings = async (req, res, next) => {
-  const { _id } = req.payload;
-  try {
-    const user = await User.findById(_id);
-    req.privateThings = user.privateThings;
-    console.log("private page", req.payload);
-    next();
-  } catch (err) {
-    console.log(err);
-  }
-};
-
 // Record route: this route saves a file recorded by user to the project repo
-router.post("/record", isAuthenticated, upload.single('audio'), async (req, res, next) => {
+router.post("/record", isAuthenticated, multerAudioUploader.single('audio'), async (req, res, next) => {
   try {
     res.status(200).json({ message: 'File uploaded successfully' });
   } catch (err) {
@@ -327,3 +312,15 @@ module.exports = router;
     res.status(500).json({ error: 'An error occurred' });
   }
 }) */
+
+// const enrichRequestWithPrivateThings = async (req, res, next) => {
+//   const { _id } = req.payload;
+//   try {
+//     const user = await User.findById(_id);
+//     req.privateThings = user.privateThings;
+//     console.log("private page", req.payload);
+//     next();
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };

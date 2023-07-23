@@ -20,6 +20,6 @@ const storage = new CloudinaryStorage({
 });
 
 // Create the multer instance with the CloudinaryStorage configuration
-const uploader = multer({ storage });
+const cloudinaryAudioUploader = multer({ storage });
 
-module.exports = uploader;
+module.exports = cloudinaryAudioUploader;

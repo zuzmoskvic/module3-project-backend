@@ -9,7 +9,7 @@ const storage = multer.diskStorage({
       cb(null, 'recorded.wav'); // Use the original filename for saving the file
     },
   });
-  const upload = multer({ storage: storage });
+  const multerAudioUploader = multer({ storage: storage });
 
 
-module.exports = upload;
+module.exports = multerAudioUploader;

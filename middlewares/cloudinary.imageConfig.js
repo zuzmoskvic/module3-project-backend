@@ -20,6 +20,6 @@ const storage = new CloudinaryStorage({
   });
 
 // Create the multer instance with the CloudinaryStorage configuration
-const imageUploader = multer({ storage });
+const cloudinaryImageUploader = multer({ storage });
 
-module.exports = imageUploader;
+module.exports = cloudinaryImageUploader;
