@@ -265,20 +265,19 @@ router.post("/record", isAuthenticated, multerAudioUploader.single('audio'), asy
     .then(uploadResult => {
       // Wav file is saved as .webm file in Cloudinary, so fetch the .mp3 url 
         const mp3Url = uploadResult.url.replace('.webm', '.mp3');
-        console.log(mp3Url);
+       // console.log(mp3Url);
         // Save the Cloudinary url as a new record 
         const record = new Record({ recordPath: mp3Url });
         return record.save();
       })
     .then((savedRecord)=>{
-        console.log('Record saved in the database:', savedRecord);
+        // console.log('Record saved in the database:', savedRecord);
             // Associate the record with the user
             return User.findByIdAndUpdate(req.payload._id, { $push: { record: savedRecord._id } }, { new: true })
             .then(updatedUser => {
-              console.log('User updated with the associated record:', updatedUser);
-              res.status(200).json({ message: 'File uploaded successfully' });
-              // Call the sendToApi function to transcribe the audio after the response is sent
-              sendToApi(savedRecord); // Pass the savedRecord object as an argument
+        //      console.log('User updated with the associated record:', updatedUser);
+              sendToApi(savedRecord); 
+                            res.status(200).json({ message: 'File uploaded successfully' });
             });
     })
     .catch(error => { console.error('Error uploading audio to Cloudinary:', error) });
@@ -302,13 +301,10 @@ async function sendToApi(recordId) {
         "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
       },
     });
-
     const text = response.data.text;
-    console.log(text);
-
     // Update the record with the transcript
     const updatedRecord = await Record.findByIdAndUpdate(recordId, { transcript: text }, { new: true });
-    console.log('Record updated with the transcript:', updatedRecord);
+    
   } catch (error) {
     console.error('Error transcribing audio:', error);
   }
