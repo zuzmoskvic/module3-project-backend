@@ -113,9 +113,7 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
       console.log("Hi!");
       const { userId } = req.params;
       console.log("userId from backend: ", userId);
-
       const user = await User.findById(userId);
-      
       console.log( user );
       res.status(200).json(  user  );
   }
@@ -246,12 +244,9 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
 });
 
 // Record route: this route saves a file recorded by user to the project repo
-// cloudinaryAudioUploader.single("recordPath")
 router.post("/record", isAuthenticated, multerAudioUploader.single('audio'), async (req, res, next) => {
   try {
     const cloudinary = require('cloudinary').v2;
-
-    // Configure Cloudinary (Same as in your previous code)
     cloudinary.config({
           cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
           api_key: process.env.CLOUDINARY_API_KEY,
@@ -278,16 +273,46 @@ router.post("/record", isAuthenticated, multerAudioUploader.single('audio'), asy
     .then((savedRecord)=>{
         console.log('Record saved in the database:', savedRecord);
             // Associate the record with the user
-        return User.findByIdAndUpdate(req.payload._id, { $push: { record: savedRecord._id } }, { new: true });
-    })
-    .then(updatedUser => {
-      console.log('User updated with the associated record:', updatedUser);
-      res.status(200).json({ message: 'File uploaded successfully' });
+            return User.findByIdAndUpdate(req.payload._id, { $push: { record: savedRecord._id } }, { new: true })
+            .then(updatedUser => {
+              console.log('User updated with the associated record:', updatedUser);
+              res.status(200).json({ message: 'File uploaded successfully' });
+              // Call the sendToApi function to transcribe the audio after the response is sent
+              sendToApi(savedRecord); // Pass the savedRecord object as an argument
+            });
     })
     .catch(error => { console.error('Error uploading audio to Cloudinary:', error) });
-  } catch (err) {
-    next(err);
-  }});
+  } catch (err) { next(err) }
+});
+
+// define function sendToApi which sends the file to Whisper API for transcription
+async function sendToApi(recordId) {
+  try {
+    const filePath = path.join(__dirname, "../recorded.wav");
+    const model = "whisper-1";
+
+    const formData = new FormData();
+    formData.append("model", model);
+    formData.append("file", fs.createReadStream(filePath));
+
+    const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+      headers: {
+        ...formData.getHeaders(),
+        authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+      },
+    });
+
+    const text = response.data.text;
+    console.log(text);
+
+    // Update the record with the transcript
+    const updatedRecord = await Record.findByIdAndUpdate(recordId, { transcript: text }, { new: true });
+    console.log('Record updated with the transcript:', updatedRecord);
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+  }
+}
 
 // This route displays all recordings of a user
 router.get("/display", isAuthenticated, async (req, res, next) => {
