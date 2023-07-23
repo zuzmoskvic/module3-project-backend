@@ -7,11 +7,12 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
 const Text = require("../models/Text.model");
 const Record = require("../models/Record.model");
-const { isAuthenticated } = require("../middlewares/jwt.auth");
-const cloudinaryAudioUploader = require("../middlewares/cloudinary.config.js");
 const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
 const FormData = require("form-data");
 const path = require("path");
+// Middlewares
+const { isAuthenticated } = require("../middlewares/jwt.auth");
+const cloudinaryAudioUploader = require("../middlewares/cloudinary.config.js");
 const cloudinaryImageUploader = require("../middlewares/cloudinary.imageConfig.js");
 const multerAudioUploader = require("../middlewares/multer.config");
 
@@ -68,6 +69,7 @@ router.get("/transcribe", isAuthenticated, cloudinaryAudioUploader.single("recor
       // TO TO / TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
 
       // This is defining the path of the local file:
+      
       const filePath = path.join(__dirname, "../audio copy.mp3");
       const model = "whisper-1";
       const formData = new FormData();
@@ -133,12 +135,7 @@ router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single(
   try {
     const {userId} = req.params
     console.log(userId, "id from editUser POST ")
-    const userToEdit = await User.findByIdAndUpdate(
-      userId,
-      { email: req.body.email },
-      { new: true }
-    );
-
+    const userToEdit = await User.findByIdAndUpdate(userId, { email: req.body.email }, { new: true });
     res.status(200).json(userToEdit);
   } catch (err) {
     console.log("Error editing user account", err);
@@ -249,14 +246,48 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
 });
 
 // Record route: this route saves a file recorded by user to the project repo
+// cloudinaryAudioUploader.single("recordPath")
 router.post("/record", isAuthenticated, multerAudioUploader.single('audio'), async (req, res, next) => {
   try {
-    res.status(200).json({ message: 'File uploaded successfully' });
+    const cloudinary = require('cloudinary').v2;
+
+    // Configure Cloudinary (Same as in your previous code)
+    cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    // Define where the user recording was saved in a local file path
+    const filePath = path.join(__dirname, "../recorded.wav");
+
+    // Upload the local audio file to Cloudinary
+    cloudinary.uploader.upload(filePath, {
+          folder: 'bananarama', // Specify the folder where you want to store the uploaded file in your Cloudinary account
+          resource_type: 'auto', // Automatically detect the resource type (audio)
+          allowedFormats: ['mp4', 'm4a', 'mp3', 'wav', 'mpeg'], // Specify the allowed file formats
+    })
+    .then(uploadResult => {
+      // Wav file is saved as .webm file in Cloudinary, so fetch the .mp3 url 
+        const mp3Url = uploadResult.url.replace('.webm', '.mp3');
+        console.log(mp3Url);
+        // Save the Cloudinary url as a new record 
+        const record = new Record({ recordPath: mp3Url });
+        return record.save();
+      })
+    .then((savedRecord)=>{
+        console.log('Record saved in the database:', savedRecord);
+            // Associate the record with the user
+        return User.findByIdAndUpdate(req.payload._id, { $push: { record: savedRecord._id } }, { new: true });
+    })
+    .then(updatedUser => {
+      console.log('User updated with the associated record:', updatedUser);
+      res.status(200).json({ message: 'File uploaded successfully' });
+    })
+    .catch(error => { console.error('Error uploading audio to Cloudinary:', error) });
   } catch (err) {
     next(err);
-  }
-}
-);
+  }});
 
 // This route displays all recordings of a user
 router.get("/display", isAuthenticated, async (req, res, next) => {

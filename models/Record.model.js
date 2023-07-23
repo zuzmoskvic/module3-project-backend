@@ -4,7 +4,7 @@ const recordSchema = new Schema(
   {
     title: {
       type: String,
-      required: [true, 'Task is required.'],
+      // required: [true, 'Task is required.'],
       lowercase: true
      },
     recordPath: {
