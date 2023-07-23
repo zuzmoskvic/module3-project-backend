@@ -67,10 +67,10 @@ router.get("/verify", isAuthenticated, async (req, res) => {
 
 router.get("/transcribe", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
     try {
-      // Method 1: transcribing a local file, saved in the project directory and then sending it to transcription
+      // TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
 
       // This is defining the path of the local file:
-      const filePath = path.join(__dirname, "../audio.mp3");
+      const filePath = path.join(__dirname, "../audio copy.mp3");
       const model = "whisper-1";
       const formData = new FormData();
       formData.append("model", model);
@@ -109,8 +109,7 @@ router.post("/profile", isAuthenticated, async (req, res, next) => {
 });
 
 router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
-  console.log("Hello!");
-    // try {
+      console.log("Hello!");
       console.log("Hi!");
       const { userId } = req.params;
       console.log("userId from backend: ", userId);
@@ -122,10 +121,12 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   }
 );
 
+// TO DELETE
 router.get("/transcribe", isAuthenticated, async (req, res, next) => {
   console.log("Hello from TRANSCRIBE"); 
 });
 
+// TO DELETE
 router.get("/addRecord", isAuthenticated, async (req, res, next) => {
   console.log("Hello from ADDRECORD");
 });
@@ -148,7 +149,7 @@ router.put("/editUser/:userId", isAuthenticated, imageUploader.single("userImage
 });
 
 router.post("/addRecord", isAuthenticated, uploader.single("recordPath"), async (req, res, next) => {
-    // Method 2: upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
+    // Upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
       // Take record from the form and upload it to mongoose
       const record = new Record({ title: req.body.title, recordPath: req.file.path });
@@ -219,6 +220,7 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   try {
     // Get the last record transcript 
   const user = await User.findById(req.payload._id);
+  console.log("user", user);
   const lastRecordId = user.record[user.record.length - 1]._id;
   const foundRecord = await Record.findById(lastRecordId);
   const prompt = foundRecord.transcript;
@@ -266,12 +268,12 @@ const storage = multer.diskStorage({
     cb(null, './'); // Specify the directory where you want to save the files
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname); // Use the original filename for saving the file
+    cb(null, 'recorded.wav'); // Use the original filename for saving the file
   },
 });
 const upload = multer({ storage: storage });
 
-// This route saves a file recorded by user to the project repo
+// Record route: this route saves a file recorded by user to the project repo
 router.post("/record", isAuthenticated, upload.single('audio'), async (req, res, next) => {
   try {
     res.status(200).json({ message: 'File uploaded successfully' });
