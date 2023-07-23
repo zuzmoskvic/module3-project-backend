@@ -113,10 +113,7 @@ router.post("/profile", isAuthenticated, async (req, res, next) => {
 });
 
 router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
-      console.log("Hello!");
-      console.log("Hi!");
       const { userId } = req.params;
-      console.log("userId from backend: ", userId);
       const user = await User.findById(userId);
       console.log( user );
       res.status(200).json(  user  );
@@ -128,6 +125,8 @@ router.get("/transcribe", isAuthenticated, async (req, res, next) => {
   console.log("Hello from TRANSCRIBE"); 
 });
 
+
+
 // TO DO / TO DELETE
 router.get("/addRecord", isAuthenticated, async (req, res, next) => {
   console.log("Hello from ADDRECORD");
@@ -135,14 +134,37 @@ router.get("/addRecord", isAuthenticated, async (req, res, next) => {
 
 router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"),  async (req, res, next) => {
   try {
-    const {userId} = req.params
-    console.log(userId, "id from editUser POST ")
+    const {userId} = req.params;
     const userToEdit = await User.findByIdAndUpdate(userId, { email: req.body.email }, { new: true });
     res.status(200).json(userToEdit);
   } catch (err) {
     console.log("Error editing user account", err);
     res.status(500).json({ error: "Something went wrong" });
   }
+});
+
+// DELETE USER .GET AND .POST ROUTES
+router.get("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
+  try {
+  const {userId} = req.params
+  console.log(userId, "id from deleteUser ROUTE")
+  const user = await User.findById(userId);
+  res.status(200).json( user );
+} catch (err) {
+  console.log("Error editing user account", err);
+  res.status(500).json({ error: "Something went wrong" });
+}
+});
+
+router.post("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
+  try {
+  const {userId} = req.params
+  const userToDelete = await User.findByIdAndDelete(userId);
+  res.status(200).json( userToDelete );
+} catch (err) {
+  console.log("Error editing user account", err);
+  res.status(500).json({ error: "Something went wrong" });
+}
 });
 
 router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
