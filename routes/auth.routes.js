@@ -424,8 +424,10 @@ router.get("/display", isAuthenticated, async (req, res, next) => {
     const user = await User.findById(req.payload._id);
     const lastRecordId = user.record[user.record.length - 1]._id;
     const foundRecord = await Record.findById(lastRecordId);
-    const transcript = foundRecord.transcript;
-    res.json(transcript);
+    // const transcript = foundRecord.transcript;
+    // const writtenText = foundRecord.writtenText[0];
+    res.json(foundRecord);
+
   } catch (err) {
     next(err);
   }
