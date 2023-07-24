@@ -280,7 +280,7 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   try {
     // Get the last record transcript
     const user = await User.findById(req.payload._id);
-    console.log("user", user);
+    // console.log("user", user);
     const lastRecordId = user.record[user.record.length - 1]._id;
     const foundRecord = await Record.findById(lastRecordId);
     const prompt = foundRecord.transcript;
@@ -300,9 +300,26 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
 
     // Create and save writtenText before sending the response
     const writtenText = await Text.create({ writtenText: text });
-    await User.findByIdAndUpdate(
-      req.payload._id,
-      { $push: { writtenText: writtenText._id } },
+    // associate with user 
+    // await User.findByIdAndUpdate(
+    //   req.payload._id,
+    //   { $push: { writtenText: writtenText._id } },
+    //   { new: true }
+    // );
+
+      //  associate with record 
+      console.log("lastRecordId", lastRecordId);
+      console.log("writtenText", writtenText);
+      console.log("text",text);
+      await Record.findByIdAndUpdate(
+        lastRecordId,
+      // { writtenText: text },
+      {
+        writtenText: {
+          _id: writtenText._id,
+          text: text,
+        },
+      },
       { new: true }
     );
 

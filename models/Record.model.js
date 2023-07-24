@@ -14,9 +14,19 @@ const recordSchema = new Schema(
     transcript: {
       type: String
     },
-    // text: {
+    // writtenText:  {
     //   type: String
-    // }
+    // },
+    writtenText: [{
+      _id: {
+        type: Schema.Types.ObjectId, 
+        required: true,
+      },
+      text: {
+        type: String,
+        required: true,
+      },
+    }],
 
     //record: [{ ref: "Record", type: Schema.Types.ObjectId }],
   },
