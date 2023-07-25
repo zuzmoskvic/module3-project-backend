@@ -417,24 +417,34 @@ async function sendToApi(recordId) {
   }
 }
 
-// This route displays all recordings of a user
 router.get("/display", isAuthenticated, async (req, res, next) => {
-  try {
-    // Get the last record transcript
-    const user = await User.findById(req.payload._id);
-    if (user.record.length !== 0) {
-      const lastRecordId = user.record[user.record.length - 1]._id;
-      const foundRecord = await Record.findById(lastRecordId);
-      // const transcript = foundRecord.transcript;
-      // const writtenText = foundRecord.writtenText[0];
-      res.json(foundRecord);
-    }
+  try {  
+    const user = await User.findById(req.payload._id).populate("record");
+    const transcripts = user.record.map(record => record.transcript);
+    res.json(transcripts);
   } catch (err) {
     next(err);
   }
 });
 
-// This route displays all recordings of a user
+
+router.post("/display", isAuthenticated, async (req, res, next) => {
+  try {
+    const { transcriptId } = req.body;
+    const user = await User.findById(req.payload._id).populate("record");
+    const recordIndex = user.record.findIndex(record => record.transcript == transcriptId);
+    if (recordIndex === -1) {
+      return res.status(404).json({ message: "Transcript not found." });
+    }
+    user.record.splice(recordIndex, 1);
+    await user.save();
+
+    res.json({ message: "Transcript deleted successfully.", deletedTranscript: transcriptId });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/profile", isAuthenticated, async (req, res, next) => {
   try {
     // Get the last record transcript
