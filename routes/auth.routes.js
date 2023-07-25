@@ -420,8 +420,8 @@ async function sendToApi(recordId) {
 router.get("/display", isAuthenticated, async (req, res, next) => {
   try {  
     const user = await User.findById(req.payload._id).populate("record");
-    const transcripts = user.record.map(record => record.transcript);
-    res.json(transcripts);
+    const records = user.record.map(record => record);
+    res.json(records);
   } catch (err) {
     next(err);
   }
@@ -430,16 +430,38 @@ router.get("/display", isAuthenticated, async (req, res, next) => {
 
 router.post("/display", isAuthenticated, async (req, res, next) => {
   try {
-    const { transcriptId } = req.body;
-    const user = await User.findById(req.payload._id).populate("record");
-    const recordIndex = user.record.findIndex(record => record.transcript == transcriptId);
-    if (recordIndex === -1) {
-      return res.status(404).json({ message: "Transcript not found." });
-    }
-    user.record.splice(recordIndex, 1);
-    await user.save();
+    const { recordId } = req.body;
+    // const user = await User.findById(req.payload._id).populate("record");
+    // console.log("user.record", user.record);
+    // console.log("recordId from backend", recordId);
+    const foundRecord = await Record.findById(recordId);
+    const transcriptToBeDeleted = foundRecord.transcript;
+    // foundRecord.transcript = null;
 
+    // transcriptToBeDeleted.deleteOne(foundRecord.transcript);
+    // const recordIndex = user.record.findIndex(record => record.transcript == transcriptId);
+    // if (recordIndex === -1) {
+    //   return res.status(404).json({ message: "Transcript not found." });
+    // }
+    // user.record.splice(recordIndex, 1);
+    await user.save();
     res.json({ message: "Transcript deleted successfully.", deletedTranscript: transcriptId });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/deletetext", isAuthenticated, async (req, res, next) => {
+  try {
+    const { writtenTextId } = req.body;
+    const user = await User.findById(req.payload._id).populate("record");
+    const writtenTextIndex = user.record.findIndex(record => record.writtenText == writtenTextId);
+    if (writtenTextIndex === -1) {
+      return res.status(404).json({ message: "writtenText not found." });
+    }
+    user.record.splice(writtenTextIndex, 1);
+    await user.save();
+    res.json({ message: "writtenText deleted successfully.", deletedTranscript: writtenTextId });
   } catch (err) {
     next(err);
   }
