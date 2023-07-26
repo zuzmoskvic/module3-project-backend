@@ -358,32 +358,25 @@ async function sendToApi(recordId) {
 router.get("/display", isAuthenticated, async (req, res, next) => {
   try {  
     const user = await User.findById(req.payload._id).populate("record");
-    const records = user.record.map(record => record);
-    res.json(records);
+    const record = user.record.map(record => record);
+    res.json(record);
   } catch (err) {
     next(err);
   }
 });
 
-
 router.post("/display", isAuthenticated, async (req, res, next) => {
   try {
     const { recordId } = req.body;
-    // const user = await User.findById(req.payload._id).populate("record");
-    // console.log("user.record", user.record);
-    // console.log("recordId from backend", recordId);
-    const foundRecord = await Record.findById(recordId);
-    const transcriptToBeDeleted = foundRecord.transcript;
-    // foundRecord.transcript = null;
-
-    // transcriptToBeDeleted.deleteOne(foundRecord.transcript);
-    // const recordIndex = user.record.findIndex(record => record.transcript == transcriptId);
-    // if (recordIndex === -1) {
-    //   return res.status(404).json({ message: "Transcript not found." });
-    // }
-    // user.record.splice(recordIndex, 1);
+    const user = await User.findById(req.payload._id).populate("record");
+    const recordIndex = user.record.findIndex(record => record._id.toString() === recordId);
+    if (recordIndex === -1) {
+      return res.status(404).json({ message: "Transcript not found." });
+    }
+    user.record.splice(recordIndex, 1);
     await user.save();
-    res.json({ message: "Transcript deleted successfully.", deletedTranscript: transcriptId });
+
+    res.json({ message: "Transcript deleted successfully.", deletedRecord: recordId });
   } catch (err) {
     next(err);
   }
@@ -476,9 +469,4 @@ module.exports = router;
 //     console.log("Error editing user account", err);
 //     res.status(500).json({ error: "Something went wrong" });
 //   }
-// });
-
-
-// router.get("/private-page-2", isAuthenticated, async (req, res) => {
-//   res.status(200).json({ privateThings: req.privateThings });
-// });
+// };
