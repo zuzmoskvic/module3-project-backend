@@ -148,7 +148,7 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
       const audioUrl = searchedRecord.recordPath;
 
       // save audio to a local file
-      const localFilePath = "./temporary.mp3";
+      const localFilePath = "./audio/temporary.mp3";
       saveAudioToLocal(audioUrl, localFilePath)
         .then(() => {
           // console.log("Audio file saved successfully!");
@@ -175,7 +175,7 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
 
       // define function sendToApi which sends the file to be transcribed
       async function sendToApi() {
-        const filePath = path.join(__dirname, "../temporary.mp3");
+        const filePath = path.join(__dirname, "../audio/temporary.mp3");
         const model = "whisper-1";
 
         const formData = new FormData();
@@ -285,7 +285,7 @@ router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), asy
       });
 
       // Define where the user recording was saved in a local file path
-      const filePath = path.join(__dirname, "../recorded.wav");
+      const filePath = path.join(__dirname, "../audio/recorded.wav");
 
       // Upload the local audio file to Cloudinary
       cloudinary.uploader
@@ -324,7 +324,7 @@ router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), asy
 // define function sendToApi which sends the file to Whisper API for transcription
 async function sendToApi(recordId) {
   try {
-    const filePath = path.join(__dirname, "../recorded.wav");
+    const filePath = path.join(__dirname, "../audio/recorded.wav");
     const model = "whisper-1";
 
     const formData = new FormData();
