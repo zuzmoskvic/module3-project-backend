@@ -20,10 +20,7 @@ const openai = new OpenAIApi(
   new Configuration({ apiKey: process.env.OPENAI_API_KEY })
 );
 
-router.post(
-  "/signup",
-  cloudinaryImageUploader.single("userImage"),
-  async (req, res) => {
+router.post("/signup", cloudinaryImageUploader.single("userImage"), async (req, res) => {
     const saltRounds = 13;
     const salt = bcrypt.genSaltSync(saltRounds);
     const hash = bcrypt.hashSync(req.body.password, salt);
@@ -32,7 +29,6 @@ router.post(
       ...(req.file ? { userImage: req.file.path } : {}),
       password: hash,
     });
-    // console.log("here is our new user in the DB", newUser);
     res.status(201).json(newUser);
   }
 );
@@ -75,11 +71,7 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get(
-  "/transcribe",
-  isAuthenticated,
-  cloudinaryAudioUploader.single("recordPath"),
-  async (req, res, next) => {
+router.get("/transcribe", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
     try {
       // TO TO / TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
 
@@ -131,11 +123,7 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   res.status(200).json(user);
 });
 
-router.put(
-  "/editUser/:userId",
-  isAuthenticated,
-  cloudinaryImageUploader.single("userImage"),
-  async (req, res, next) => {
+router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
     try {
       const saltRounds = 13;
       const salt = bcrypt.genSaltSync(saltRounds);
@@ -189,11 +177,7 @@ router.post("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.post(
-  "/addRecord",
-  isAuthenticated,
-  cloudinaryAudioUploader.single("recordPath"),
-  async (req, res, next) => {
+router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
     // Upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
       // Take record from the form and upload it to mongoose
@@ -259,8 +243,8 @@ router.post(
             },
           })
           .then((response) => {
+            // then send the transcription as response and save to DB 
             const text = response.data.text;
-            console.log(text);
             res.json({ text });
             return Record.findByIdAndUpdate(
               searchedRecord,
@@ -280,10 +264,10 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   try {
     // Get the last record transcript
     const user = await User.findById(req.payload._id);
-    // console.log("user", user);
     const lastRecordId = user.record[user.record.length - 1]._id;
     const foundRecord = await Record.findById(lastRecordId);
-    const prompt = foundRecord.transcript;
+
+    const prompt = await foundRecord.transcript;
 
     // Generate OpenAI chat completion
     const completion = await openai.createChatCompletion({
@@ -308,12 +292,9 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     // );
 
       //  associate with record 
-      console.log("lastRecordId", lastRecordId);
-      console.log("writtenText", writtenText);
-      console.log("text",text);
+      res.json({ text });
       await Record.findByIdAndUpdate(
-        lastRecordId,
-      // { writtenText: text },
+          lastRecordId,
       {
         writtenText: {
           _id: writtenText._id,
@@ -323,19 +304,31 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
       { new: true }
     );
 
-    res.json({ text });
   } catch (err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
   }
 });
 
+router.get("/transciption", isAuthenticated, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.payload._id);
+    console.log(user.record.length);
+    if (user.record.length > 0) {
+      const lastRecordId = user.record[0]._id;}
+    if (user.record.length > 0) {
+      const lastRecordId = user.record[user.record.length - 1]._id;
+      const foundRecord = await Record.findById(lastRecordId);
+      const transcript = await foundRecord.transcript;
+      res.send({ transcript });
+  }
+  } catch (err) {
+    next(err);
+  }
+})
+
 // Record route: this route saves a file recorded by user to the project repo
-router.post(
-  "/record",
-  isAuthenticated,
-  multerAudioUploader.single("audio"),
-  async (req, res, next) => {
+router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), async (req, res, next) => {
     try {
       const cloudinary = require("cloudinary").v2;
       cloudinary.config({
@@ -350,33 +343,33 @@ router.post(
       // Upload the local audio file to Cloudinary
       cloudinary.uploader
         .upload(filePath, {
-          folder: "bananarama", // Specify the folder where you want to store the uploaded file in your Cloudinary account
-          resource_type: "auto", // Automatically detect the resource type (audio)
-          allowedFormats: ["mp4", "m4a", "mp3", "wav", "mpeg"], // Specify the allowed file formats
+          folder: "bananarama", 
+          resource_type: "auto", 
+          allowedFormats: ["mp4", "m4a", "mp3", "wav", "mpeg"], 
         })
         .then((uploadResult) => {
           // Wav file is saved as .webm file in Cloudinary, so fetch the .mp3 url
           const mp3Url = uploadResult.url.replace(".webm", ".mp3");
-          // console.log(mp3Url);
-          // Save the Cloudinary url as a new record
           const record = new Record({ recordPath: mp3Url });
           return record.save();
         })
         .then((savedRecord) => {
-          // console.log('Record saved in the database:', savedRecord);
           // Associate the record with the user
           return User.findByIdAndUpdate(
             req.payload._id,
             { $push: { record: savedRecord._id } },
             { new: true }
-          ).then((updatedUser) => {
-            //      console.log('User updated with the associated record:', updatedUser);
-            sendToApi(savedRecord);
-            res.status(200).json({ message: "File uploaded successfully" });
+          ).then(() => {
+            return sendToApi(savedRecord._id)
+            .then((text) => {
+              res.json({ text }); 
+            })
+            // sendToApi(savedRecord);
+            // res.json({ text })          
           });
         })
         .catch((error) => {
-          console.error("Error uploading audio to Cloudinary:", error);
+          console.error("Error saving record:", error);
         });
     } catch (err) {
       next(err);
@@ -397,21 +390,23 @@ async function sendToApi(recordId) {
     const response = await axios.post(
       "https://api.openai.com/v1/audio/transcriptions",
       formData,
-      {
-        headers: {
+      { headers: {
           ...formData.getHeaders(),
           authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
         },
       }
     );
+    
     const text = response.data.text;
+    console.log("this is the transription here", text);
     // Update the record with the transcript
-    const updatedRecord = await Record.findByIdAndUpdate(
+    await Record.findByIdAndUpdate(
       recordId,
       { transcript: text },
       { new: true }
     );
+    return text;
   } catch (error) {
     console.error("Error transcribing audio:", error);
   }
