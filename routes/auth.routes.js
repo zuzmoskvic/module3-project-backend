@@ -4,18 +4,22 @@ const axios = require("axios");
 const fs = require("fs");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const FormData = require("form-data");
+const path = require("path");
+
+// Models 
 const User = require("../models/User.model");
 const Text = require("../models/Text.model");
 const Record = require("../models/Record.model");
-const { Configuration, OpenAIApi, TranscriptionsApi } = require("openai");
-const FormData = require("form-data");
-const path = require("path");
-// Middlewares
+
+// Middlewares & API configs
 const { isAuthenticated } = require("../middlewares/jwt.auth");
 const cloudinaryAudioUploader = require("../middlewares/cloudinary.config.js");
 const cloudinaryImageUploader = require("../middlewares/cloudinary.imageConfig.js");
 const multerAudioUploader = require("../middlewares/multer.config");
+const { Configuration, OpenAIApi } = require("openai");
 
+// OpenAI config
 const openai = new OpenAIApi(
   new Configuration({ apiKey: process.env.OPENAI_API_KEY })
 );
@@ -50,7 +54,7 @@ router.post("/login", async (req, res) => {
           algorithm: "HS256",
           expiresIn: "6h",
         });
-        console.log("here is my new token", authToken);
+        // console.log("here is my new token", authToken);
         res.status(200).json({ authToken });
       }
     } else {
@@ -71,45 +75,12 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/transcribe", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
-    try {
-      // TO TO / TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
-
-      // This is defining the path of the local file:
-
-      const filePath = path.join(__dirname, "../audio copy.mp3");
-      const model = "whisper-1";
-      const formData = new FormData();
-      formData.append("model", model);
-      formData.append("file", fs.createReadStream(filePath));
-
-      const response = axios
-        .post("https://api.openai.com/v1/audio/transcriptions", formData, {
-          headers: {
-            ...formData.getHeaders(),
-            authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
-          },
-        })
-        .then((response) => {
-          console.log(response.data.text);
-          const text = response.data.text;
-          res.json({ text });
-        });
-    } catch (err) {
-      console.error("error with openai axios call", err);
-      res.status(500).json({ error: "An error occurred" });
-    }
-  }
-);
-
 router.post("/profile", isAuthenticated, async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.payload._id);
     user.delete();
     res.status(201).json(user);
     res.status(200).json({ message: "User account deleted successfully" });
-    console.log("hi from profile POST");
   } catch (err) {
     console.log("Error deleting user account", err);
     res.status(500).json({ error: "Something went wrong" });
@@ -119,7 +90,6 @@ router.post("/profile", isAuthenticated, async (req, res, next) => {
 router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
-  console.log(user);
   res.status(200).json(user);
 });
 
@@ -143,28 +113,6 @@ router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single(
   }
 );
 
-// TO DO / TO DELETE
-router.get("/transcribe", isAuthenticated, async (req, res, next) => {
-  console.log("Hello from TRANSCRIBE");
-});
-
-// TO DO / TO DELETE
-router.get("/addRecord", isAuthenticated, async (req, res, next) => {
-  console.log("Hello from ADDRECORD");
-});
-
-// DELETE USER .GET AND .POST ROUTES
-router.get("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    console.log(userId, "id from deleteUser ROUTE");
-    const user = await User.findById(userId);
-    res.status(200).json(user);
-  } catch (err) {
-    console.log("Error editing user account", err);
-    res.status(500).json({ error: "Something went wrong" });
-  }
-});
 
 router.post("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
   try {
@@ -203,7 +151,7 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
       const localFilePath = "./temporary.mp3";
       saveAudioToLocal(audioUrl, localFilePath)
         .then(() => {
-          console.log("Audio file saved successfully!");
+          // console.log("Audio file saved successfully!");
           sendToApi();
         })
         .catch((error) => {
@@ -310,10 +258,9 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.get("/transciption", isAuthenticated, async (req, res, next) => {
+router.get("/transcription", isAuthenticated, async (req, res, next) => {
   try {
     const user = await User.findById(req.payload._id);
-    console.log(user.record.length);
     if (user.record.length > 0) {
       const lastRecordId = user.record[0]._id;}
     if (user.record.length > 0) {
@@ -363,9 +310,7 @@ router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), asy
             return sendToApi(savedRecord._id)
             .then((text) => {
               res.json({ text }); 
-            })
-            // sendToApi(savedRecord);
-            // res.json({ text })          
+            })     
           });
         })
         .catch((error) => {
@@ -373,8 +318,7 @@ router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), asy
         });
     } catch (err) {
       next(err);
-    }
-  }
+    }}
 );
 
 // define function sendToApi which sends the file to Whisper API for transcription
@@ -399,7 +343,6 @@ async function sendToApi(recordId) {
     );
     
     const text = response.data.text;
-    console.log("this is the transription here", text);
     // Update the record with the transcript
     await Record.findByIdAndUpdate(
       recordId,
@@ -464,11 +407,7 @@ router.post("/deletetext", isAuthenticated, async (req, res, next) => {
 
 router.get("/profile", isAuthenticated, async (req, res, next) => {
   try {
-    // Get the last record transcript
     const user = await User.findById(req.payload._id);
-    // const lastRecordId = user.record[user.record.length - 1]._id;
-    // const foundRecord = await Record.findById(lastRecordId);
-    // const transcript = foundRecord.transcript;
     res.json(user);
   } catch (err) {
     next(err);
@@ -479,37 +418,67 @@ router.get("/private-page", isAuthenticated, async (req, res) => {
   res.status(200).json({ privateThings: req.privateThings });
 });
 
-router.get("/private-page-2", isAuthenticated, async (req, res) => {
-  res.status(200).json({ privateThings: req.privateThings });
-});
-
 module.exports = router;
 
-// Check if the uploaded file is being received correctly
-/*
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }*/
+// TO DELETE: 
 
-// Cleanup: Delete the temporary local file
-/*
-    fs.unlinkSync(localFilePath);
-    res.status(201).json(record);
-  } catch (err) {
-    console.error(err);
-    // Handle the error appropriately
-    res.status(500).json({ error: 'An error occurred' });
-  }
-}) */
+// router.get("/transcribe", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
+//     try {
+//       // TO TO / TO DELETE: transcribing a local file, saved in the project directory and then sending it to transcription
 
-// const enrichRequestWithPrivateThings = async (req, res, next) => {
-//   const { _id } = req.payload;
-//   try {
-//     const user = await User.findById(_id);
-//     req.privateThings = user.privateThings;
-//     console.log("private page", req.payload);
-//     next();
-//   } catch (err) {
-//     console.log(err);
+//       // This is defining the path of the local file:
+
+//       const filePath = path.join(__dirname, "../audio copy.mp3");
+//       const model = "whisper-1";
+//       const formData = new FormData();
+//       formData.append("model", model);
+//       formData.append("file", fs.createReadStream(filePath));
+
+//       const response = axios
+//         .post("https://api.openai.com/v1/audio/transcriptions", formData, {
+//           headers: {
+//             ...formData.getHeaders(),
+//             authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+//             "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+//           },
+//         })
+//         .then((response) => {
+//           console.log(response.data.text);
+//           const text = response.data.text;
+//           res.json({ text });
+//         });
+//     } catch (err) {
+//       console.error("error with openai axios call", err);
+//       res.status(500).json({ error: "An error occurred" });
+//     }
 //   }
-// };
+// );
+
+
+// // TO DO / TO DELETE
+// router.get("/transcribe", isAuthenticated, async (req, res, next) => {
+//   console.log("Hello from TRANSCRIBE");
+// });
+
+// // TO DO / TO DELETE
+// router.get("/addRecord", isAuthenticated, async (req, res, next) => {
+//   console.log("Hello from ADDRECORD");
+// });
+
+// // DELETE USER .GET AND .POST ROUTES
+// router.get("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
+//   try {
+//     const { userId } = req.params;
+//     console.log(userId, "id from deleteUser ROUTE");
+//     const user = await User.findById(userId);
+//     res.status(200).json(user);
+//   } catch (err) {
+//     console.log("Error editing user account", err);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
+
+
+// router.get("/private-page-2", isAuthenticated, async (req, res) => {
+//   res.status(200).json({ privateThings: req.privateThings });
+// });
