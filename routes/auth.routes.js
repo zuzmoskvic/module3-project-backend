@@ -68,12 +68,20 @@ router.post("/login", async (req, res) => {
 router.get("/verify", isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.payload._id);
-    res.status(200).json({ user: user.toObject(), userImage: user.userImage });
+
+    if (user !== null) {
+      // User found, respond with the user data
+      res.status(200).json({ user: user.toObject(), userImage: user.userImage });
+    } else {
+      // User not found, handle this situation accordingly
+      res.status(404).json({ error: "User not found" });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "An error occurred" });
   }
 });
+
 
 router.post("/profile", isAuthenticated, async (req, res, next) => {
   try {
@@ -114,7 +122,7 @@ router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single(
 );
 
 
-router.post("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
+router.delete("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
     const userToDelete = await User.findByIdAndDelete(userId);
@@ -469,4 +477,4 @@ module.exports = router;
 //     console.log("Error editing user account", err);
 //     res.status(500).json({ error: "Something went wrong" });
 //   }
-// };
+// });
