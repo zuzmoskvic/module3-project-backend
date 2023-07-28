@@ -72,12 +72,14 @@ The server should now be running at http://localhost:5000.
 
 The project follows a simple structure:
 
-- `index.js`: The entry point of the application, where the server is initialized.
-- `routes/api/users.js`: Defines the routes for handling user-related operations.
-- `controllers/userController.js`: Contains the controller functions for user-related operations.
-- `models/User.js`: Defines the MongoDB schema for the User collection.
-- `middlewares/errorHandler.js`: Custom error handling middleware.
-- `middlewares/validateRequest.js`: Request validation middleware.
+- `app.js`: Sets up an Express server with routes for "/api" and "/auth" endpoints, including error handling.
+- `config/index.js`: Configures middleware Express server, enabling request handling and CORS for a specific frontend URL.
+- `routes/auth.routes.js`: Defines the routes for handling user-related operations.
+-  routes/index.routes.js`: 
+- `models/`: Defines the MongoDB schemas
+- `middlewares/`: Custom middlewares for JWT authorisation, Cloudinaty, Multer
+- `audio/`: Stores temporary files for handling audio recording and upload 
+- `error-handling/`: Error handling
 
 Feel free to modify the project structure and add more features as per your requirements.
 
