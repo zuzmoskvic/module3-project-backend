@@ -1,4 +1,4 @@
-# module3-project-backend
+# "Too Lazy to Type" Project [module3-project-backend]
 
 This is the backend of the Final Project for Ironhack Bootcamp by Zuzana & Mauricio for website called "Too Lazy to Type".
 The backend is built using Node.js and Express.js, with MongoDB as the database. It provides a RESTful API to interact with the data.
