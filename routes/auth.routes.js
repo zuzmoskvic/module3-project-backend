@@ -82,7 +82,6 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-
 router.post("/profile", isAuthenticated, async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.payload._id);
@@ -103,15 +102,11 @@ router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
 
 router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
     try {
-      const saltRounds = 13;
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hash = bcrypt.hashSync(req.body.password, salt);
       const { userId } = req.params;
       const userToEdit = await User.findByIdAndUpdate(userId, 
         {
         email: req.body.email,
         ...(req.file ? { userImage: req.file.path } : {}),
-        password: hash,
       });
       res.status(200).json(userToEdit);
     } catch (err) {
@@ -120,7 +115,6 @@ router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single(
     }
   }
 );
-
 
 router.delete("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
   try {
