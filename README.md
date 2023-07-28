@@ -17,3 +17,27 @@ Follow these instructions to get the project up and running on your local machin
 
    ```bash
    git clone https://github.com/your-username/mern-backend-example.git
+
+2. **Navigate to the project directory:**
+
+   ```bash
+cd mern-backend-example
+
+3. **Install the dependencies:**
+
+   ```bash
+npm install
+
+4. **Set up the environment variables:**
+
+   ```bash
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/mern-backend-example
+
+5. **Start the server:**
+
+   ```bash
+npm run dev
+
+The server should now be running at http://localhost:5000.
+
