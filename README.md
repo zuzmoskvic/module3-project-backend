@@ -36,17 +36,14 @@ Follow these instructions to get the project up and running on your local machin
 4. **Set up the environment variables:**
 Register for Cloudinary and OpenAI services to obtain the necessary keys
    ```
-TOKEN_SECRET=[Replace with own]
-
-CLOUDINARY_CLOUD_NAME=[Replace with own]
-CLOUDINARY_API_KEY=[Replace with own]
-CLOUDINARY_API_SECRET=[Replace with own]
-
-OPENAI_API_KEY=[Replace with own]
-
+   TOKEN_SECRET=[Replace with own]
+   CLOUDINARY_CLOUD_NAME=[Replace with own]
+   CLOUDINARY_API_KEY=[Replace with own]
+   CLOUDINARY_API_SECRET=[Replace with own]
+   OPENAI_API_KEY=[Replace with own]
    ```
 
-5. **Start the server:**
+5.**Start the server:**
 
    ```
    npm run dev
