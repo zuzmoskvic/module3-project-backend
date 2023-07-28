@@ -419,6 +419,30 @@ router.get("/private-page", isAuthenticated, async (req, res) => {
   res.status(200).json({ privateThings: req.privateThings });
 });
 
+router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
+  const { recordId } = req.params;
+  const record = await Record.findById(recordId);
+  res.status(200).json(record);
+});
+
+
+router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
+  const { recordId } = req.params;
+  const { transcript } = req.body;
+
+  const record = await Record.findById(recordId);
+  console.log(record);
+  if (!record) {return res.status(404).json({ message: 'Record not found' });}
+  
+      // Update user properties if provided in the request body
+  if (transcript) record.transcript = transcript;
+  
+      // Save the updated user
+  const updatedRecord = await record.save();
+
+  return res.json(updatedRecord);
+});
+
 module.exports = router;
 
 // TO DELETE: 
