@@ -49,11 +49,24 @@ Follow these instructions to get the project up and running on your local machin
 The server should now be running at http://localhost:5000.
 
 ## API Endpoints
-- GET /api/users: Get all users.
-- GET /api/users/:id: Get a user by ID.
-- POST /api/users: Create a new user.
-- PUT /api/users/:id: Update a user by ID.
-- DELETE /api/users/:id: Delete a user by ID.
+
+- **POST** `/signup`: Create a new user with an image (multipart form data).
+- **POST** `/login`: Authenticate user and generate a JWT.
+- **GET** `/verify`: Verify user's JWT and return info with image.
+- **POST** `/profile`: Delete user's account (authenticated).
+- **GET** `/editUser/:userId`: Get a user by ID (authenticated).
+- **PUT** `/editUser/:userId`: Update a user by ID (authenticated).
+- **POST** `/deleteUser/:userId`: Delete a user by ID (authenticated).
+- **POST** `/addRecord`: Upload and transcribe audio file (authenticated).
+- **GET** `/write`: Generate feedback text based on last transcript (authenticated).
+- **GET** `/transcription`: Get last recorded transcript (authenticated).
+- **POST** `/record`: Upload recorded audio file and associate it with the user (authenticated).
+- **GET** `/display`: Get all records associated with the user (authenticated).
+- **POST** `/display`: Delete a specific record (authenticated).
+- **POST** `/deletetext`: Delete a specific written text (authenticated).
+- **GET** `/profile`: Get user's profile info (authenticated).
+- **GET** `/private-page`: Get private data associated with the user (authenticated).
+
 
 ## Project Structure
 
@@ -78,6 +91,9 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
-Special thanks to Ironhack for making this happen! 
+- Special thanks to Ironhack for making this happen! 
+- Project built with IronLauncher
+- Audio and image upload via Cloudinary
+- Transcription via Whisper OpenAI, written text via Chat Completion by OpenAI 
 
 Happy coding!
