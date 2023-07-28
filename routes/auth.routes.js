@@ -428,18 +428,12 @@ router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
 
 router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
   const { recordId } = req.params;
-  const { transcript } = req.body;
-
+  const { transcript, texts } = req.body;
   const record = await Record.findById(recordId);
-  console.log(record);
   if (!record) {return res.status(404).json({ message: 'Record not found' });}
-  
-      // Update user properties if provided in the request body
   if (transcript) record.transcript = transcript;
-  
-      // Save the updated user
+  if (texts) {record.writtenText = texts;}
   const updatedRecord = await record.save();
-
   return res.json(updatedRecord);
 });
 
