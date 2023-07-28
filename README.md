@@ -24,7 +24,7 @@ Follow these instructions to get the project up and running on your local machin
 2. **Navigate to the project directory:**
 
    ```
-   cd module3-project-backen
+   cd module3-project-backend
    ```
 
 3. **Install the dependencies:**
@@ -34,10 +34,16 @@ Follow these instructions to get the project up and running on your local machin
    ```
 
 4. **Set up the environment variables:**
-
+Register for Cloudinary and OpenAI services to obtain the necessary keys
    ```
-   PORT=5000
-   MONGO_URI=mongodb://localhost:27017/mern-backend-example
+TOKEN_SECRET=[Replace with own]
+
+CLOUDINARY_CLOUD_NAME=[Replace with own]
+CLOUDINARY_API_KEY=[Replace with own]
+CLOUDINARY_API_SECRET=[Replace with own]
+
+OPENAI_API_KEY=[Replace with own]
+
    ```
 
 5. **Start the server:**
