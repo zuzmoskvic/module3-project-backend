@@ -54,14 +54,13 @@ router.post("/login", async (req, res) => {
           algorithm: "HS256",
           expiresIn: "6h",
         });
-        // console.log("here is my new token", authToken);
         res.status(200).json({ authToken });
       }
     } else {
       res.status(400).json({ message: "email or password do not match" });
     }
   } catch (err) {
-    console.log(err);
+    res.status(500).json({ message: "Something went wrong on the server." });
   }
 });
 
@@ -423,6 +422,7 @@ router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
 router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
   const { recordId } = req.params;
   const { transcript, texts } = req.body;
+  
   const record = await Record.findById(recordId);
   if (!record) {return res.status(404).json({ message: 'Record not found' });}
   if (transcript) record.transcript = transcript;
