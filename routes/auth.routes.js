@@ -233,12 +233,6 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
 
     // Create and save writtenText before sending the response
     const writtenText = await Text.create({ writtenText: text });
-    // associate with user 
-    // await User.findByIdAndUpdate(
-    //   req.payload._id,
-    //   { $push: { writtenText: writtenText._id } },
-    //   { new: true }
-    // );
 
       //  associate with record 
       res.json({ text });
@@ -252,7 +246,6 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
       },
       { new: true }
     );
-
   } catch (err) {
     console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
