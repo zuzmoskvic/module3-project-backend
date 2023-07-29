@@ -224,7 +224,7 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
       messages: [
         {
           role: "user",
-          content: `Hi, can you please write a short feedback text with this context: ${prompt}`,
+          content: `Hi, can you please write a short text with this context: ${prompt}.`,
         },
       ],
     });
