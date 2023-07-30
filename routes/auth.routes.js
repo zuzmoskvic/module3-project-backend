@@ -24,6 +24,8 @@ const openai = new OpenAIApi(
   new Configuration({ apiKey: process.env.OPENAI_API_KEY })
 );
 
+
+// Authentication routes
 router.post("/signup", cloudinaryImageUploader.single("userImage"), async (req, res) => {
     const saltRounds = 13;
     const salt = bcrypt.genSaltSync(saltRounds);
@@ -81,6 +83,21 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
+// User operations 
+router.get("/profile", isAuthenticated, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.payload._id);
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/private-page", isAuthenticated, async (req, res) => {
+  res.status(200).json({ privateThings: req.privateThings });
+});
+
+
 router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
@@ -114,6 +131,7 @@ router.delete("/deleteUser/:userId", isAuthenticated, async (req, res, next) => 
   }
 });
 
+// Record creation operations  
 router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recordPath"), async (req, res, next) => {
     // Upload a file from user's drive > upload it to cloudinary > then save it to local file in project > send it to be transcribed
     try {
@@ -233,6 +251,12 @@ router.get("/transcript/:recordId", isAuthenticated, async (req, res, next) => {
     res.send({ transcript });
 })
 
+router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
+  const { recordId } = req.params;
+  const record = await Record.findById(recordId);
+  res.status(200).json(record);
+});
+
 // Record route: this route saves a file recorded by user to the project repo
 router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), async (req, res, next) => {
     try {
@@ -310,6 +334,7 @@ async function sendToApi(recordId) {
   }
 }
 
+// All records displaying (reading) operations  
 router.get("/display", isAuthenticated, async (req, res, next) => {
   try {  
     const user = await User.findById(req.payload._id).populate("record");
@@ -337,6 +362,7 @@ router.post("/display", isAuthenticated, async (req, res, next) => {
   }
 });
 
+// Record editing and deleting operations  
 router.post("/deletetext", isAuthenticated, async (req, res, next) => {
   try {
     const { writtenTextId } = req.body;
@@ -351,25 +377,6 @@ router.post("/deletetext", isAuthenticated, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-router.get("/profile", isAuthenticated, async (req, res, next) => {
-  try {
-    const user = await User.findById(req.payload._id);
-    res.json(user);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/private-page", isAuthenticated, async (req, res) => {
-  res.status(200).json({ privateThings: req.privateThings });
-});
-
-router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
-  const { recordId } = req.params;
-  const record = await Record.findById(recordId);
-  res.status(200).json(record);
 });
 
 router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
