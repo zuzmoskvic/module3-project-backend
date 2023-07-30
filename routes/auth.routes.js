@@ -244,7 +244,7 @@ router.get("/write/:recordId", isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.get("/transcript/:recordId", isAuthenticated, async (req, res, next) => {
+router.get("/transcribe/:recordId", isAuthenticated, async (req, res, next) => {
     const { recordId } = req.params;
     const record = await Record.findById(recordId);
     const transcript = record.transcript ;
