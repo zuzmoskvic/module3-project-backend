@@ -98,13 +98,13 @@ router.get("/private-page", isAuthenticated, async (req, res) => {
 });
 
 
-router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
+router.get("/edit/:userId", isAuthenticated, async (req, res, next) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
   res.status(200).json(user);
 });
 
-router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
+router.put("/edit/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
     try {
       const { userId } = req.params;
       const userToEdit = await User.findByIdAndUpdate(userId, 
@@ -120,7 +120,7 @@ router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single(
   }
 );
 
-router.delete("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
+router.delete("/delete/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
     const userToDelete = await User.findByIdAndDelete(userId);
