@@ -210,24 +210,18 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
   }
 );
 
-router.get("/write", isAuthenticated, async (req, res, next) => {
+router.get("/write/:recordId", isAuthenticated, async (req, res, next) => { 
+  
   try {
-    // Get the last record transcript
-    const user = await User.findById(req.payload._id);
-    const lastRecordId = user.record[user.record.length - 1]._id;
-    const foundRecord = await Record.findById(lastRecordId);
-
-    const prompt = await foundRecord.transcript;
+    // Get the record transcript 
+    const { recordId } = req.params;
+    const record = await Record.findById(recordId);
+    const prompt = record.transcript;
 
     // Generate OpenAI chat completion
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "user",
-          content: `Hi, can you please write a short text with this context: ${prompt}.`,
-        },
-      ],
+      messages: [ { role: "user", content: `Hi, can you please write a short text with this context: ${prompt}.` } ] 
     });
 
     const text = completion.data.choices[0].message.content;
@@ -235,20 +229,13 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
     // Create and save writtenText before sending the response
     const writtenText = await Text.create({ writtenText: text });
 
-      //  associate with record 
+    //  Associate the written text with the record 
       res.json({ text });
-      await Record.findByIdAndUpdate(
-          lastRecordId,
-      {
-        writtenText: {
-          _id: writtenText._id,
-          text: text,
-        },
-      },
-      { new: true }
+      await Record.findByIdAndUpdate(recordId, 
+        { writtenText: { _id: writtenText._id, text: text } }, 
+        { new: true }
     );
   } catch (err) {
-    console.error("Error with OpenAI Chat Completion", err);
     res.status(500).json({ error: "An error occurred" });
   }
 });
