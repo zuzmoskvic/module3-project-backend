@@ -81,18 +81,6 @@ router.get("/verify", isAuthenticated, async (req, res) => {
   }
 });
 
-router.post("/profile", isAuthenticated, async (req, res, next) => {
-  try {
-    const user = await User.findByIdAndDelete(req.payload._id);
-    user.delete();
-    res.status(201).json(user);
-    res.status(200).json({ message: "User account deleted successfully" });
-  } catch (err) {
-    console.log("Error deleting user account", err);
-    res.status(500).json({ error: "Something went wrong" });
-  }
-});
-
 router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
@@ -211,7 +199,6 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
 );
 
 router.get("/write/:recordId", isAuthenticated, async (req, res, next) => { 
-  
   try {
     // Get the record transcript 
     const { recordId } = req.params;
@@ -223,7 +210,6 @@ router.get("/write/:recordId", isAuthenticated, async (req, res, next) => {
       model: "gpt-3.5-turbo",
       messages: [ { role: "user", content: `Hi, can you please write a short text with this context: ${prompt}.` } ] 
     });
-
     const text = completion.data.choices[0].message.content;
 
     // Create and save writtenText before sending the response
