@@ -357,7 +357,7 @@ router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
   return res.json(updatedRecord);
 });
 
-router.delete("/edit/:recordId", isAuthenticated, async (req, res, next) => {
+router.delete("/delete/:recordId", isAuthenticated, async (req, res, next) => {
   try {
     const { recordId } = req.params;
     const recordToDelete = await Record.findByIdAndDelete(recordId);
