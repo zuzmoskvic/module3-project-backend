@@ -345,50 +345,26 @@ router.get("/display", isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.post("/display", isAuthenticated, async (req, res, next) => {
-  try {
-    const { recordId } = req.body;
-    const user = await User.findById(req.payload._id).populate("record");
-    const recordIndex = user.record.findIndex(record => record._id.toString() === recordId);
-    if (recordIndex === -1) {
-      return res.status(404).json({ message: "Transcript not found." });
-    }
-    user.record.splice(recordIndex, 1);
-    await user.save();
-
-    res.json({ message: "Transcript deleted successfully.", deletedRecord: recordId });
-  } catch (err) {
-    next(err);
-  }
-});
-
 // Record editing and deleting operations  
-router.post("/deletetext", isAuthenticated, async (req, res, next) => {
-  try {
-    const { writtenTextId } = req.body;
-    const user = await User.findById(req.payload._id).populate("record");
-    const writtenTextIndex = user.record.findIndex(record => record.writtenText == writtenTextId);
-    if (writtenTextIndex === -1) {
-      return res.status(404).json({ message: "writtenText not found." });
-    }
-    user.record.splice(writtenTextIndex, 1);
-    await user.save();
-    res.json({ message: "writtenText deleted successfully.", deletedTranscript: writtenTextId });
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
   const { recordId } = req.params;
   const { transcript, texts } = req.body;
-  
   const record = await Record.findById(recordId);
   if (!record) {return res.status(404).json({ message: 'Record not found' });}
   if (transcript) record.transcript = transcript;
   if (texts) {record.writtenText = texts;}
   const updatedRecord = await record.save();
   return res.json(updatedRecord);
+});
+
+router.delete("/edit/:recordId", isAuthenticated, async (req, res, next) => {
+  try {
+    const { recordId } = req.params;
+    const recordToDelete = await Record.findByIdAndDelete(recordId);
+    res.json({ message: "Transcript deleted successfully.", deletedRecord: recordId });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
