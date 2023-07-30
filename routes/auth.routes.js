@@ -98,13 +98,13 @@ router.get("/private-page", isAuthenticated, async (req, res) => {
 });
 
 
-router.get("/edit/:userId", isAuthenticated, async (req, res, next) => {
+router.get("/editUser/:userId", isAuthenticated, async (req, res, next) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
   res.status(200).json(user);
 });
 
-router.put("/edit/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
+router.put("/editUser/:userId", isAuthenticated, cloudinaryImageUploader.single("userImage"), async (req, res, next) => {
     try {
       const { userId } = req.params;
       const userToEdit = await User.findByIdAndUpdate(userId, 
@@ -120,7 +120,7 @@ router.put("/edit/:userId", isAuthenticated, cloudinaryImageUploader.single("use
   }
 );
 
-router.delete("/delete/:userId", isAuthenticated, async (req, res, next) => {
+router.delete("/deleteUser/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
     const userToDelete = await User.findByIdAndDelete(userId);
@@ -251,11 +251,7 @@ router.get("/transcribe/:recordId", isAuthenticated, async (req, res, next) => {
     res.send({ transcript });
 })
 
-router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
-  const { recordId } = req.params;
-  const record = await Record.findById(recordId);
-  res.status(200).json(record);
-});
+
 
 // Record route: this route saves a file recorded by user to the project repo
 router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), async (req, res, next) => {
@@ -345,8 +341,14 @@ router.get("/display", isAuthenticated, async (req, res, next) => {
   }
 });
 
+router.get("/editRecord/:recordId", isAuthenticated, async (req, res, next) => {
+  const { recordId } = req.params;
+  const record = await Record.findById(recordId);
+  res.status(200).json(record);
+});
+
 // Record editing and deleting operations  
-router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
+router.put("/editRecord/:recordId", isAuthenticated, async (req,res) => {
   const { recordId } = req.params;
   const { transcript, texts } = req.body;
   const record = await Record.findById(recordId);
