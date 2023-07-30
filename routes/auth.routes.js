@@ -137,6 +137,7 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
       await record.save();
 
       const recordId = record._id;
+
       // Associate the record with the user
       await User.findByIdAndUpdate(
         req.payload._id,
@@ -194,7 +195,7 @@ router.post("/addRecord", isAuthenticated, cloudinaryAudioUploader.single("recor
           .then((response) => {
             // then send the transcription as response and save to DB 
             const text = response.data.text;
-            res.json({ text });
+            res.json({ recordId, text });
             return Record.findByIdAndUpdate(
               searchedRecord,
               { transcript: text },
@@ -252,20 +253,11 @@ router.get("/write", isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.get("/transcription", isAuthenticated, async (req, res, next) => {
-  try {
-    const user = await User.findById(req.payload._id);
-    if (user.record.length > 0) {
-      const lastRecordId = user.record[0]._id;}
-    if (user.record.length > 0) {
-      const lastRecordId = user.record[user.record.length - 1]._id;
-      const foundRecord = await Record.findById(lastRecordId);
-      const transcript = await foundRecord.transcript;
-      res.send({ transcript });
-  }
-  } catch (err) {
-    next(err);
-  }
+router.get("/transcript/:recordId", isAuthenticated, async (req, res, next) => {
+    const { recordId } = req.params;
+    const record = await Record.findById(recordId);
+    const transcript = record.transcript ;
+    res.send({ transcript });
 })
 
 // Record route: this route saves a file recorded by user to the project repo
@@ -410,7 +402,6 @@ router.get("/record/:recordId", isAuthenticated, async (req, res, next) => {
   const record = await Record.findById(recordId);
   res.status(200).json(record);
 });
-
 
 router.put("/edit/:recordId", isAuthenticated, async (req,res) => {
   const { recordId } = req.params;
