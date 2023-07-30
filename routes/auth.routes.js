@@ -294,8 +294,8 @@ router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), asy
             { new: true }
           ).then(() => {
             return sendToApi(savedRecord._id)
-            .then((text) => {
-              res.json({ text }); 
+            .then((record) => {
+              res.json({ record }); 
             })     
           });
         })
@@ -329,13 +329,9 @@ async function sendToApi(recordId) {
     );
     
     const text = response.data.text;
-    // Update the record with the transcript
-    await Record.findByIdAndUpdate(
-      recordId,
-      { transcript: text },
-      { new: true }
-    );
-    return text;
+    // Update the record with the transcript and get full record as response 
+    const record = await Record.findByIdAndUpdate(recordId, { transcript: text }, { new: true });
+    return record
   } catch (error) {
     console.error("Error transcribing audio:", error);
   }
