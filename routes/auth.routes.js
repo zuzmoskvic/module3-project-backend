@@ -244,14 +244,32 @@ router.get("/write/:recordId", isAuthenticated, async (req, res, next) => {
   }
 });
 
+router.get("/writeText/:recordId", isAuthenticated, async (req, res, next) => {
+    // Get the record transcript
+    const { recordId } = req.params;
+    const record = await Record.findById(recordId);
+    const prompt = record.transcript;
+
+    // Generate OpenAI chat completion
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "user", content: `Hi, can you please write a short text with this context: ${prompt}.` },
+      ],
+    });
+    const text = completion.data.choices[0].message.content;
+    // Push the new written text to the array
+    record.writtenText.push({ text: text });
+    await record.save();
+    res.json({ text });
+});
+
 router.get("/transcribe/:recordId", isAuthenticated, async (req, res, next) => {
     const { recordId } = req.params;
     const record = await Record.findById(recordId);
     const transcript = record.transcript ;
     res.send({ transcript });
 })
-
-
 
 // Record route: this route saves a file recorded by user to the project repo
 router.post("/record", isAuthenticated, multerAudioUploader.single("audio"), async (req, res, next) => {
